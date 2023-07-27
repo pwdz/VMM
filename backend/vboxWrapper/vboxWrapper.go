@@ -215,7 +215,7 @@ func Transfer(vmSrc, vmDst, originPath, dstPath string)(string, error){
 	return "Ok", nil
 }
 func Upload(vmDst, dstPath, originPath string)(string, error){
-	copyToCommand := exec.Command(VBoxCommand, "guestcontrol",vmDst,"copyto","--target-directory",dstPath, "D:/AUT/Courses/Term6/Cloud Computing/CloudComputing/TestFile.txt","--username","pwdz","--password", "pwdz", "--verbose")
+	copyToCommand := exec.Command(VBoxCommand, "guestcontrol",vmDst,"copyto","--target-directory",dstPath, "/home/user/BachelorProject/TestFile.txt","--username","pwdz","--password", "pwdz", "--verbose")
 	printCommand(copyToCommand)
 	copyToOutput, err := copyToCommand.CombinedOutput()
 	printOutput(copyToOutput)
@@ -226,3 +226,4 @@ func Upload(vmDst, dstPath, originPath string)(string, error){
 
 	return "Ok", nil
 }
+

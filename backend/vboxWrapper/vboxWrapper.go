@@ -1,82 +1,134 @@
 package vboxWrapper
 
-
 import (
 	"fmt"
 	"os/exec"
 	"strings"
 )
-
 // Define commands as a static map
 var commands = map[string]string{
-	"createVM": "VBoxManage createvm --name <VM_Name> --ostype <OS_Type> --register",
-	"memory":   "VBoxManage modifyvm <VM_Name> --memory <Amount_in_MB>",
-	"cpus":     "VBoxManage modifyvm <VM_Name> --cpus <Number_of_CPUs>",
-	"hdd": `VBoxManage createhd --filename "<Path_to_VDI>" --size 20480
-VBoxManage storagectl <VM_Name> --name "SATA Controller" --add sata --controller IntelAHCI
-VBoxManage storageattach <VM_Name> --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium "<Path_to_VDI>"`,
-	"iso":     `VBoxManage storageattach <VM_Name> --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium "<Path_to_ISO>"`,
-	"network": "VBoxManage modifyvm <VM_Name> --nic1 nat",
-	"cloneVM": "VBoxManage clonevm <Source_VM_Name> --name <New_VM_Name> --register",
-	"deleteVM": "VBoxManage unregistervm <VM_Name> --delete",
-	"upload":    "VBoxManage guestcontrol <VM_Name> copyto --source <Local_File> --target <Guest_File>",
-	"transfer":  "VBoxManage guestcontrol <Source_VM_Name> copyfrom --target <Dest_VM_Name> --source <Source_File> --destination <Dest_File>",
-	"execute":   "VBoxManage guestcontrol <VM_Name> run --exe <Path_to_Exe> -- <Arguments>",
-	"change":    "VBoxManage modifyvm <VM_Name> --<Setting_Name> <Value>",
-	"poweroff":  "VBoxManage controlvm <VM_Name> poweroff",
-	"poweron":   "VBoxManage startvm <VM_Name> --type headless",
-	"getStatus": "VBoxManage showvminfo <VM_Name> --machinereadable",
-	"listVMs":   "VBoxManage list vms",
+	"createVM": "VBoxManage createvm --name '<VM_Name>' --ostype '<OS_Type>' --register",
+	"memory":   "VBoxManage modifyvm '<VM_Name>' --memory <Amount_in_MB>",
+	"cpus":     "VBoxManage modifyvm '<VM_Name>' --cpus <Number_of_CPUs>",
+	"hdd1":     "VBoxManage createhd --filename '<Path_to_VDI>' --size 20480",
+	"hdd2":     "VBoxManage storagectl '<VM_Name>' --name 'SATA Controller' --add sata --controller IntelAHCI",
+	"hdd3":     "VBoxManage storageattach '<VM_Name>' --storagectl 'SATA Controller' --port 0 --device 0 --type hdd --medium '<Path_to_VDI>'",
+	"iso":      "VBoxManage storageattach '<VM_Name>' --storagectl 'SATA Controller' --port 0 --device 0 --type dvddrive --medium '<Path_to_ISO>'",
+	"network":  "VBoxManage modifyvm '<VM_Name>' --nic1 nat",
+	"cloneVM":  "VBoxManage clonevm '<Source_VM_Name>' --name '<New_VM_Name>' --register",
+	"deleteVM":   "VBoxManage unregistervm '<VM_Name>' --delete",
+	"deleteVDI":  "VBoxManage closemedium disk '<VDI_UUID>' --delete",
+	"deleteNet":  "VBoxManage modifyvm '<VM_Name>' --nic<Adapter_Number> none",
+	"upload":   "VBoxManage guestcontrol '<VM_Name>' copyto --source '<Local_File>' --target '<Guest_File>'",
+	"transfer": "VBoxManage guestcontrol '<Source_VM_Name>' copyfrom --target '<Dest_VM_Name>' --source '<Source_File>' --destination '<Dest_File>'",
+	"execute":  "VBoxManage guestcontrol '<VM_Name>' run --exe '<Path_to_Exe>' -- <Arguments>",
+	"change":   "VBoxManage modifyvm '<VM_Name>' --<Setting_Name> <Value>",
+	"poweroff": "VBoxManage controlvm '<VM_Name>' poweroff",
+	"poweron":  "VBoxManage startvm '<VM_Name>' --type headless",
+	"getStatus": "VBoxManage showvminfo '<VM_Name>' --machinereadable",
+	"listVMs":  "VBoxManage list vms",
 }
 
-// CreateVM function to create a Virtual Machine
-func CreateVM(vmName, osType, amountInMB, numCPUs, vdiPath, isoPath string) error {
-	requiredCommands := map[string]string{
-		"createVM": commands["createVM"],
-		"memory":   commands["memory"],
-		"cpus":     commands["cpus"],
-		"hdd":      commands["hdd"],
-		"iso":      commands["iso"],
+func executeCommand(cmd string) error {
+	command := exec.Command("bash","-c", cmd)
+	output, err := command.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to execute command '%s': \nOutput: %s", cmd, string(output))
+	}
+	return nil
+}
+
+func CreateVM(vmName, osType, amountInMB, numCPUs, isoPath string) error {
+	requiredCommands := []string{
+		"createVM",
+		"memory",
+		"cpus",
+		"hdd1",
+		"hdd2",
+		"hdd3",
+		"iso",
+		"network",
 	}
 
 	// Replace placeholders with actual values
-	for key, cmd := range requiredCommands {
+	for _, cmdKey := range requiredCommands {
+		cmd := commands[cmdKey]
 		cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
 		cmd = strings.ReplaceAll(cmd, "<OS_Type>", osType)
 		cmd = strings.ReplaceAll(cmd, "<Amount_in_MB>", amountInMB)
 		cmd = strings.ReplaceAll(cmd, "<Number_of_CPUs>", numCPUs)
-		cmd = strings.ReplaceAll(cmd, "<Path_to_VDI>", vdiPath)
+		cmd = strings.ReplaceAll(cmd, "<Path_to_VDI>", strings.Join([]string{"/home/user/VirtualBox VMs/",vmName,".vdi"}, ""))
 		cmd = strings.ReplaceAll(cmd, "<Path_to_ISO>", isoPath)
-		requiredCommands[key] = cmd
-	}
 
-	// Execute the commands to create the VM
-	for _, cmd := range requiredCommands {
-		args := strings.Fields(cmd)
-		command := exec.Command(args[0], args[1:]...)
-		output, err := command.CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
+		println(cmd)
+		if err := executeCommand(cmd); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-// DeleteVM function to delete a Virtual Machine
+// DeleteVM function to delete a Virtual Machine along with its VDI and network settings
 func DeleteVM(vmName string) error {
+	// Get the UUID of the VM's VDI first
+	cmd := "VBoxManage showvminfo " + vmName + " --machinereadable | grep vdi"
+	command := exec.Command("bash", "-c", cmd)
+	output, err := command.CombinedOutput()
+	if err != nil {
+		fmt.Printf("failed to get VDI information for VM: %s", vmName)
+	}
+
+	// Extract the VDI UUID from the output
+	vdiUUID := ""
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "vdi=") {
+			vdiUUID = strings.TrimPrefix(line, "vdi=")
+			break
+		}
+	}
+
+	// Use the "deleteVDI" command to delete the VM's VDI using its UUID
+	if vdiUUID != "" {
+		cmd = commands["deleteVDI"]
+		cmd = strings.ReplaceAll(cmd, "<VDI_UUID>", vdiUUID)
+		args := strings.Fields(cmd)
+		command = exec.Command(args[0], args[1:]...)
+		output, err = command.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to execute command: %s\nOutput: %s", cmd, string(output))
+		}
+	}
+
+	// Use the "deleteNet" command to remove all the VM's network settings
+	cmd = commands["deleteNet"]
+	for adapterNumber := 1; adapterNumber <= 8; adapterNumber++ {
+		cmdWithAdapter := strings.ReplaceAll(cmd, "<VM_Name>", vmName)
+		cmdWithAdapter = strings.ReplaceAll(cmdWithAdapter, "<Adapter_Number>", fmt.Sprintf("%d", adapterNumber))
+		args := strings.Fields(cmdWithAdapter)
+		command = exec.Command(args[0], args[1:]...)
+		output, err = command.CombinedOutput()
+		if err != nil {
+			// The network adapter might not exist, so ignore the error
+			continue
+		}
+	}
+
 	// Use the "deleteVM" command to delete the VM
-	cmd := commands["deleteVM"]
+	cmd = commands["deleteVM"]
 
 	// Replace placeholder with the actual VM name
 	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
 
 	args := strings.Fields(cmd)
-	command := exec.Command(args[0], args[1:]...)
-	output, err := command.CombinedOutput()
+	command = exec.Command(args[0], args[1:]...)
+	output, err = command.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
 	}
+
+
 
 	return nil
 }
@@ -127,14 +179,7 @@ func PowerOffVM(vmName string) error {
 
 	// Replace placeholder with the actual VM name
 	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
-
-	args := strings.Fields(cmd)
-	command := exec.Command(args[0], args[1:]...)
-	output, err := command.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
-	}
-
+	executeCommand(cmd)
 	return nil
 }
 
@@ -146,13 +191,7 @@ func PowerOnVM(vmName string) error {
 	// Replace placeholder with the actual VM name
 	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
 
-	args := strings.Fields(cmd)
-	command := exec.Command(args[0], args[1:]...)
-	output, err := command.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
-	}
-
+	executeCommand(cmd)
 	return nil
 }
 
@@ -253,213 +292,3 @@ func ExecuteCommandOnVM(vmName, pathToExe, arguments string) error {
 
 	return nil
 }
-
-
-// ////////////////////////////////////////
-/*
-const(
-	VBoxCommand = "vboxmanage"
-)
-
-func printCommand(cmd *exec.Cmd) {
-  log.Printf("==> Executing: %s\n", strings.Join(cmd.Args, " "))
-}
-
-func printError(err error) {
-  if err != nil {
-    os.Stderr.WriteString(fmt.Sprintf("==> Error: %s\n", err.Error()))
-  }
-}
-
-func printOutput(outs []byte) {
-  if len(outs) > 0 {
-    log.Printf("==> Output: %s\n", string(outs))
-  }
-}
-
-func GetStatus(vmName string) (string, error){
-	cmd := exec.Command(VBoxCommand, "showvminfo",vmName,"--machinereadable")
-
-	printCommand(cmd)
-	output, err := cmd.CombinedOutput()
-	if err != nil{
-		printError(err)
-		return "", err
-	}
-	regex, _ := regexp.Compile("VMState=\"[a-zA-Z]+\"")
-	status := regex.FindString(string(output))
-	log.Println(status)
-	status = strings.Split(status, "=")[1]
-	status = strings.Trim(status, "\"")
-	return status, nil
-}
-func GetVmNames() ([]string, error){
-	cmd := exec.Command(VBoxCommand, "list","vms")
-
-	printCommand(cmd)
-	output, err := cmd.CombinedOutput()
-	
-	if err != nil{
-		printError(err)
-		return nil, err
-	}
-	regex, _ := regexp.Compile("\"[A-Za-z0-9]+\"")
-	vmNames := regex.FindAllString(string(output), -1)
-
-	for index, vmName := range vmNames{
-		vmNames[index] = strings.Trim(vmName, "\"")
-	}
-	return vmNames, nil
-}
-func PowerOn(vmName string) (string, error){
-	status, err := GetStatus(vmName)
-	if err != nil{
-		return "", err
-	}
-	
-	if status == "poweroff" {
-		cmd := exec.Command(VBoxCommand, "startvm",vmName,"--type","headless")
-
-		printCommand(cmd)
-		output, err := cmd.CombinedOutput()
-		printOutput(output)
-		if err != nil{
-			printError(err)
-			return "", err
-		}
-		return "Powering on", nil
-	}
-	return "", fmt.Errorf(vmName + ">> current status: " + status)
-}
-func PowerOff(vmName string)(string, error){
-	status, err := GetStatus(vmName)
-	if err != nil{
-		return "", err
-	}
-	
-	if status == "running" {
-		cmd := exec.Command(VBoxCommand, "controlvm",vmName,"poweroff")
-
-		printCommand(cmd)
-		output, err := cmd.CombinedOutput()
-		printOutput(output)
-		printError(err)
-		if err != nil{
-			printError(err)
-			return "", err
-		}
-		return "Powering off", nil
-	}
-
-	return "", fmt.Errorf(vmName + ">> current status: " + status)
-}
-
-func ChangeSetting(vmName string, cpu, ram int)(string, error){
-	args := []string{"modifyvm", vmName}
-
-	if cpu > 0{
-		args = append(args, "--cpus", strconv.Itoa(cpu))
-	}
-	if ram > 0{
-		args = append(args, "--memory",strconv.Itoa(ram))
-	}
-	
-	cmd := exec.Command(VBoxCommand, args...)	
-	printCommand(cmd)
-
-	output, err := cmd.CombinedOutput()
-	printOutput(output)
-	if err != nil{
-		printError(err)
-		return "", fmt.Errorf(string(output))
-	}
-
-	return "Ok", nil
-}
-func Clone(vmSrc, vmDst string)(string, error){
-	cmd := exec.Command(VBoxCommand, "clonevm",vmSrc,"--name",vmDst, "--register")
-	printCommand(cmd)
-	output, err := cmd.CombinedOutput()
-	printOutput(output)
-	if err != nil{
-		printError(err)
-		return "", fmt.Errorf(string(output))
-	}
-
-	return "Ok", nil
-}
-func Delete(vmName string)(string, error){
-	cmd := exec.Command(VBoxCommand, "unregistervm",vmName,"--delete")
-	printCommand(cmd)
-	output, err := cmd.CombinedOutput()
-	printOutput(output)
-	if err != nil{
-		printError(err)
-		return "", fmt.Errorf(string(output))
-	}
-
-	return "Ok", nil
-}
-func Execute(vmName, input string)(string, string, error){
-	cmd := exec.Command(VBoxCommand, "guestcontrol",vmName,"run","bin/sh","--username","pwdz","--password", "pwdz", "--wait-stdout", "--wait-stderr", "--","-c",input)
-	printCommand(cmd)
-	output, err := cmd.CombinedOutput()
-	printOutput(output)
-	if err != nil{
-		printError(err)
-		return "", "", fmt.Errorf(string(output))
-	}
-
-	return "Ok", string(output), nil
-}
-func Transfer(vmSrc, vmDst, originPath, dstPath string)(string, error){
-	 _, err := os.Stat("./temp")
-    if err != nil && os.IsNotExist(err){
-		os.Mkdir("temp", 666)
-	}
-
-	paths := strings.Split(originPath, "/")
-	fileName := paths[len(paths) - 1]
-
-	internalPath :=   "./temp/" 
-	log.Println(vmSrc, vmDst)
-
-	copyFromCommand := exec.Command(VBoxCommand, "guestcontrol",vmSrc,"copyfrom","--target-directory",internalPath , originPath,"--username","pwdz","--password", "pwdz","--verbose")
-	printCommand(copyFromCommand)
-	copyFromOutput, err := copyFromCommand.CombinedOutput()
-	printOutput(copyFromOutput)
-	if err != nil{
-		printError(err)
-		return "", fmt.Errorf(string(copyFromOutput))
-	}
-
-
-	internalPath += fileName
-	log.Println(internalPath)
-
-	copyToCommand := exec.Command(VBoxCommand, "guestcontrol",vmDst,"copyto","--target-directory",dstPath, internalPath,"--username","pwdz","--password", "pwdz", "--verbose")
-	printCommand(copyToCommand)
-	copyToOutput, err := copyToCommand.CombinedOutput()
-	printOutput(copyToOutput)
-	if err != nil{
-		printError(err)
-		return "", fmt.Errorf(string(copyToOutput))
-	}
-	os.Remove(internalPath)
-
-	return "Ok", nil
-}
-func Upload(vmDst, dstPath, originPath string)(string, error){
-	copyToCommand := exec.Command(VBoxCommand, "guestcontrol",vmDst,"copyto","--target-directory",dstPath, "/home/user/BachelorProject/TestFile.txt","--username","pwdz","--password", "pwdz", "--verbose")
-	printCommand(copyToCommand)
-	copyToOutput, err := copyToCommand.CombinedOutput()
-	printOutput(copyToOutput)
-	if err != nil{
-		printError(err)
-		return "", fmt.Errorf(string(copyToOutput))
-	}
-
-	return "Ok", nil
-}
-
-*/

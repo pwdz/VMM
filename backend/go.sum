@@ -24,8 +24,8 @@ github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27k
 github.com/mattn/go-shellwords v1.0.11/go.mod h1:EZzvwXDESEeg03EKmM+RmDnNOPKG4lLtQsUlTZDWQ8Y=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/pwdz/cloudComputing v0.0.0-20221104142548-7f0423fea0ac h1:DAvi8qtnPU/zqQspK3Y1bdycm/QRqaXa7EfPMVgRmPY=
-github.com/pwdz/cloudComputing v0.0.0-20221104142548-7f0423fea0ac/go.mod h1:9zBV1o5G9+oHUyzwa10DbIVutpdERvyxmQHYXTGMTQ8=
+github.com/pwdz/VMM/backend v0.0.0-20221104142548-7f0423fea0ac h1:DAvi8qtnPU/zqQspK3Y1bdycm/QRqaXa7EfPMVgRmPY=
+github.com/pwdz/VMM/backend v0.0.0-20221104142548-7f0423fea0ac/go.mod h1:9zBV1o5G9+oHUyzwa10DbIVutpdERvyxmQHYXTGMTQ8=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=

@@ -7,7 +7,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.2.5
 	// github.com/labstack/echo/v4 v4.2.2
 	github.com/labstack/echo/v4 v4.9.0
-	github.com/pwdz/cloudComputing v0.0.0-20221104142548-7f0423fea0ac
+	github.com/pwdz/VMM/backend v0.0.0-20221104142548-7f0423fea0ac
 )
 
 require (

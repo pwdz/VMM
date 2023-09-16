@@ -7,11 +7,15 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.2.5
 	// github.com/labstack/echo/v4 v4.2.2
 	github.com/labstack/echo/v4 v4.9.0
-	github.com/pwdz/VMM/backend v0.0.0-20221104142548-7f0423fea0ac
 )
+
+require github.com/jinzhu/gorm v1.9.16
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect

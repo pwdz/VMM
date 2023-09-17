@@ -1,13 +1,14 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
-	
-	"github.com/pwdz/VMM/backend/models"
+
 	jwtMiddleware "github.com/pwdz/VMM/backend/jwt"
+	"github.com/pwdz/VMM/backend/models"
 )
 
 // Handler for CreateVM
@@ -158,16 +159,11 @@ func SignupHandler(c echo.Context) error {
 	}
 
 	// TODO
-	/*
-	// Check if the user already exists
-	if _, exists := usersDB[user.Username]; exists {
+	if storedUser := DB.FindUserByUsername(user.Username); storedUser != nil{
 		return c.JSON(http.StatusConflict, models.VMResponse{Error: "User already exists"})
 	}
-
-	// Store the user in the database (you should hash the password in a real application)
-	usersDB[user.Username] = *user
-*/
-
+	
+	DB.CreateUser(user)
 
 	// Generate a JWT token for the new user
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -186,14 +182,10 @@ func LoginHandler(c echo.Context) error {
 	}
 
 	// TODO
-	/*
-	
-	// Check if the user exists and the password is correct (you should hash the password in a real application)
-	storedUser, exists := usersDB[user.Username]
-	if !exists || storedUser.Password != user.Password {
+	storedUser := DB.FindUserByUsername(user.Username)
+	if storedUser == nil || storedUser.Password != user.Password{
 		return c.JSON(http.StatusUnauthorized, models.VMResponse{Error: "Invalid credentials"})
 	}
-	*/
 
 	// Generate a JWT token for the authenticated user
 	token := jwt.New(jwt.SigningMethodHS256)

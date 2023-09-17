@@ -23,14 +23,14 @@ func NewDatabase(config *configs.DBConfig) (*Database, error) {
 	fmt.Println(dbURI)
 
     db, err := gorm.Open("mysql", dbURI)
-	// if db != nil{
-		// fmt.Println("ADASDASD")
-		// (&Database{connection: db}).AutoMigrate()
-	// }
     if err != nil {
         return nil, err
     }
-    return &Database{connection: db}, nil
+	
+    DB := &Database{connection: db}
+	DB.AutoMigrate()
+
+	return DB, nil
 }
 
 func (db *Database) Close() {

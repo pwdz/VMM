@@ -40,20 +40,25 @@ func InitServer(){
 		}
 	})
 
-	// Middleware to add JWT token validation to protected routes.
-	e.Use(jwtMiddleware.JwtMiddleware)
-
 	// Define routes for each endpoint
 	e.POST("/signup", SignupHandler) 
 	e.POST("/login", LoginHandler)   
-	e.POST("/create-vm", CreateVMHandler)
-	e.POST("/clone-vm", CloneVMHandler)
-	e.POST("/change-vm-settings", ChangeVMSettingsHandler)
-	e.POST("/power-off-vm", PowerOffVMHandler)
-	e.POST("/power-on-vm", PowerOnVMHandler)
-	e.POST("/get-vm-status", GetVMStatusHandler)
-	e.GET("/get-available-vms", GetAvailableVMsHandler)
-	e.POST("/upload-file-to-vm", UploadFileToVMHandler)
-	e.POST("/transfer-file-between-vms", TransferFileBetweenVMsHandler)
-	e.POST("/execute-command-on-vm", ExecuteCommandOnVMHandler)
+
+	// Create a route group with the authorization middleware
+	apiGroup := e.Group("/api")
+	// Middleware to add JWT token validation to protected routes.
+	apiGroup.Use(jwtMiddleware.JwtMiddleware) // Apply the authorization middleware to this group
+
+	apiGroup.POST("/create-vm", CreateVMHandler)
+	apiGroup.POST("/clone-vm", CloneVMHandler)
+	apiGroup.POST("/change-vm-settings", ChangeVMSettingsHandler)
+	apiGroup.POST("/power-off-vm", PowerOffVMHandler)
+	apiGroup.POST("/power-on-vm", PowerOnVMHandler)
+	apiGroup.POST("/get-vm-status", GetVMStatusHandler)
+	apiGroup.GET("/get-available-vms", GetAvailableVMsHandler)
+	apiGroup.POST("/upload-file-to-vm", UploadFileToVMHandler)
+	apiGroup.POST("/transfer-file-between-vms", TransferFileBetweenVMsHandler)
+	apiGroup.POST("/execute-command-on-vm", ExecuteCommandOnVMHandler)
+
+	e.Start(fmt.Sprintf("%s:%s", Cfg.Host, Cfg.Port))
 }

@@ -23,9 +23,10 @@ func JwtMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		tokenString := c.Request().Header.Get("Authorization")
 
 		if tokenString == "" {
-			return c.JSON(http.StatusUnauthorized, map[string]string{
-				"error": "Unauthorized",
-			})
+			return c.Redirect(http.StatusFound, "/login")
+			// return c.JSON(http.StatusUnauthorized, map[string]string{
+				// "error": "Unauthorized",
+			// })
 		}
 
 		// Parse the token
@@ -35,13 +36,15 @@ func JwtMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		if err != nil {
 			if err == jwt.ErrSignatureInvalid {
-				return c.JSON(http.StatusUnauthorized, map[string]string{
-					"error": "Invalid token signature",
-				})
+				return c.Redirect(http.StatusFound, "/login")
+				// return c.JSON(http.StatusUnauthorized, map[string]string{
+				// 	"error": "Invalid token signature",
+				// })
 			}
-			return c.JSON(http.StatusUnauthorized, map[string]string{
-				"error": "Unauthorized",
-			})
+			return c.Redirect(http.StatusFound, "/login")
+			// return c.JSON(http.StatusUnauthorized, map[string]string{
+				// "error": "Unauthorized",
+			// })
 		}
 
 		// Check if the token is valid
@@ -50,35 +53,12 @@ func JwtMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return next(c)
 		}
 
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"error": "Unauthorized",
-		})
+		return c.Redirect(http.StatusFound, "/login")
+		// return c.JSON(http.StatusUnauthorized, map[string]string{
+		// 	"error": "Unauthorized",
+		// })
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // import (
 // 	"log"
@@ -86,16 +66,9 @@ func JwtMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 // 	"github.com/dgrijalva/jwt-go"
 // 	"github.com/labstack/echo/v4"
-// 	"github.com/pwdz/VMM/backend/internal/server/constants"
-// 	"github.com/pwdz/VMM/backend/internal/server/user"
+// 	"github.com/pwdz/VMM/code/backend/internal/server/constants"
+// 	"github.com/pwdz/VMM/code/backend/internal/server/user"
 // )
-
-
-
-
-
-
-
 
 // func Authorize(next echo.HandlerFunc) echo.HandlerFunc {
 // 	return func(c echo.Context) error {

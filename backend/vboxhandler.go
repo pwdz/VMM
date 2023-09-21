@@ -1,11 +1,12 @@
 package main
+
 /*
 import (
 	"encoding/json"
 
-	"github.com/pwdz/VMM/backend/internal/server/constants"
-	tools "github.com/pwdz/VMM/backend/pkg"
-	vbox "github.com/pwdz/VMM/backend/vboxWrapper"
+	"github.com/pwdz/VMM/code/backend/internal/server/constants"
+	tools "github.com/pwdz/VMM/code/backend/pkg"
+	vbox "github.com/pwdz/VMM/code/backend/vboxWrapper"
 )
 
 type command struct {
@@ -186,3 +187,4 @@ func (cmd command) handleUpload() []byte {
 
 	return tools.ConcatJsons(cmdJson, respJson)
 }
+*/

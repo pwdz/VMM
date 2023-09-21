@@ -20,4 +20,5 @@ type User struct {
     Username string `gorm:"unique_index" json:"username"`
     Email    string `json:"email"`
     Password string `json:"password"`
+    Role     string `gorm:"default:normal"` 
 }

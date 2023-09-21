@@ -4,14 +4,14 @@ import (
 	// "fmt"
 	// "time"
 
-	"github.com/pwdz/VMM/backend/server"
-	// "github.com/pwdz/VMM/backend/vbox"
+	"github.com/pwdz/VMM/code/backend/server"
+	// "github.com/pwdz/VMM/code/backend/vbox"
 )
 
-func main(){
+func main() {
 	server.InitCfg()
 	server.InitServer()
-	// vboxWrapper.GetAvailableVMs() 
+	// vboxWrapper.GetAvailableVMs()
 	// return
 	// Example usage of the functions
 	// vmName := "MyVM"

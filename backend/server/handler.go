@@ -1,155 +1,153 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 
-	jwtMiddleware "github.com/pwdz/VMM/backend/jwt"
-	"github.com/pwdz/VMM/backend/models"
+	jwtMiddleware "github.com/pwdz/VMM/code/backend/jwt"
+	"github.com/pwdz/VMM/code/backend/models"
 )
 
 // Handler for CreateVM
 func CreateVMHandler(c echo.Context) error {
-    req := new(models.VMRequest)
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(models.VMRequest)
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to create a VM here using req
+	// Implement the logic to create a VM here using req
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "VM created successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "VM created successfully"})
 }
 
 // Handler for DeleteVM
 func DeleteVMHandler(c echo.Context) error {
-    req := new(struct {
-        VMName string `json:"vmName"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		VMName string `json:"vmName"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to delete a VM here using req.VMName
+	// Implement the logic to delete a VM here using req.VMName
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "VM deleted successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "VM deleted successfully"})
 }
 
 func CloneVMHandler(c echo.Context) error {
-    req := new(struct {
-        SourceVMName string `json:"sourceVMName"`
-        NewVMName    string `json:"newVMName"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		SourceVMName string `json:"sourceVMName"`
+		NewVMName    string `json:"newVMName"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to clone a VM here using req.SourceVMName and req.NewVMName
+	// Implement the logic to clone a VM here using req.SourceVMName and req.NewVMName
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "VM cloned successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "VM cloned successfully"})
 }
 func ChangeVMSettingsHandler(c echo.Context) error {
-    req := new(struct {
-        VMName       string `json:"vmName"`
-        SettingName  string `json:"settingName"`
-        SettingValue string `json:"settingValue"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		VMName       string `json:"vmName"`
+		SettingName  string `json:"settingName"`
+		SettingValue string `json:"settingValue"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to change VM settings here using req.VMName, req.SettingName, and req.SettingValue
+	// Implement the logic to change VM settings here using req.VMName, req.SettingName, and req.SettingValue
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "VM settings changed successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "VM settings changed successfully"})
 }
 func PowerOffVMHandler(c echo.Context) error {
-    req := new(struct {
-        VMName string `json:"vmName"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		VMName string `json:"vmName"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to power off a VM here using req.VMName
+	// Implement the logic to power off a VM here using req.VMName
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "VM powered off successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "VM powered off successfully"})
 }
 
 func PowerOnVMHandler(c echo.Context) error {
-    req := new(struct {
-        VMName string `json:"vmName"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		VMName string `json:"vmName"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to power on a VM here using req.VMName
+	// Implement the logic to power on a VM here using req.VMName
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "VM powered on successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "VM powered on successfully"})
 }
 func GetVMStatusHandler(c echo.Context) error {
-    req := new(struct {
-        VMName string `json:"vmName"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		VMName string `json:"vmName"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to get VM status here using req.VMName
+	// Implement the logic to get VM status here using req.VMName
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "VM status retrieved successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "VM status retrieved successfully"})
 }
 func GetAvailableVMsHandler(c echo.Context) error {
-    // Implement the logic to get a list of available VMs
+	// Implement the logic to get a list of available VMs
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "List of available VMs retrieved successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "List of available VMs retrieved successfully"})
 }
 func UploadFileToVMHandler(c echo.Context) error {
-    req := new(struct {
-        VMName    string `json:"vmName"`
-        LocalFile string `json:"localFile"`
-        GuestFile string `json:"guestFile"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		VMName    string `json:"vmName"`
+		LocalFile string `json:"localFile"`
+		GuestFile string `json:"guestFile"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to upload a file to a VM using req.VMName, req.LocalFile, and req.GuestFile
+	// Implement the logic to upload a file to a VM using req.VMName, req.LocalFile, and req.GuestFile
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "File uploaded to VM successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "File uploaded to VM successfully"})
 }
 func TransferFileBetweenVMsHandler(c echo.Context) error {
-    req := new(struct {
-        SourceVMName string `json:"sourceVMName"`
-        SourceFile   string `json:"sourceFile"`
-        DestVMName   string `json:"destVMName"`
-        DestFile     string `json:"destFile"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		SourceVMName string `json:"sourceVMName"`
+		SourceFile   string `json:"sourceFile"`
+		DestVMName   string `json:"destVMName"`
+		DestFile     string `json:"destFile"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to transfer a file between VMs using req.SourceVMName, req.SourceFile, req.DestVMName, and req.DestFile
+	// Implement the logic to transfer a file between VMs using req.SourceVMName, req.SourceFile, req.DestVMName, and req.DestFile
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "File transferred between VMs successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "File transferred between VMs successfully"})
 }
 func ExecuteCommandOnVMHandler(c echo.Context) error {
-    req := new(struct {
-        VMName    string `json:"vmName"`
-        PathToExe string `json:"pathToExe"`
-        Arguments string `json:"arguments"`
-    })
-    if err := c.Bind(req); err != nil {
-        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-    }
+	req := new(struct {
+		VMName    string `json:"vmName"`
+		PathToExe string `json:"pathToExe"`
+		Arguments string `json:"arguments"`
+	})
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+	}
 
-    // Implement the logic to execute a command on a VM using req.VMName, req.PathToExe, and req.Arguments
+	// Implement the logic to execute a command on a VM using req.VMName, req.PathToExe, and req.Arguments
 
-    return c.JSON(http.StatusOK, models.VMResponse{Message: "Command executed on VM successfully"})
+	return c.JSON(http.StatusOK, models.VMResponse{Message: "Command executed on VM successfully"})
 }
-
 
 // Handler for user registration (Sign-up)
 func SignupHandler(c echo.Context) error {
@@ -159,10 +157,10 @@ func SignupHandler(c echo.Context) error {
 	}
 
 	// TODO
-	if storedUser := DB.FindUserByUsername(user.Username); storedUser != nil{
+	if storedUser := DB.FindUserByUsername(user.Username); storedUser != nil {
 		return c.JSON(http.StatusConflict, models.VMResponse{Error: "User already exists"})
 	}
-	
+
 	DB.CreateUser(user)
 
 	// Generate a JWT token for the new user
@@ -183,7 +181,7 @@ func LoginHandler(c echo.Context) error {
 
 	// TODO
 	storedUser := DB.FindUserByUsername(user.Username)
-	if storedUser == nil || storedUser.Password != user.Password{
+	if storedUser == nil || storedUser.Password != user.Password {
 		return c.JSON(http.StatusUnauthorized, models.VMResponse{Error: "Invalid credentials"})
 	}
 
@@ -195,36 +193,6 @@ func LoginHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, models.VMResponse{Message: "Login successful", Error: "", Data: tokenString})
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
 // Create the Signin handler
@@ -240,7 +208,7 @@ func Login(c echo.Context) error{
 	// Get the expected password from our in memory map
 	ok := false
 	var expectedPassword, role string
-	for _, user := range constants.Users{ 
+	for _, user := range constants.Users{
 		if user.Username == creds.Username{
 			expectedPassword = user.Password
 			ok = true
@@ -276,11 +244,11 @@ func Login(c echo.Context) error{
 	return c.String(http.StatusOK, tokenString)
 }
 // func EndPointHandler(c echo.Context) error{
-	
+
 // 	headerContentType := c.Request().Header.Get("Content-Type")
 // 	var cmd command
 
-// 	if headerContentType == "application/json" {		
+// 	if headerContentType == "application/json" {
 // 		var unmarshalErr *json.UnmarshalTypeError
 
 // 		decoder := json.NewDecoder(c.Request().Body)
@@ -302,7 +270,7 @@ func Login(c echo.Context) error{
 // 			return err
 // 		}
 // 		defer file.Close()
-			
+
 // 		emptyFile, err := os.Create(handler.Filename)
 // 		if err != nil {
 // 			return err
@@ -315,7 +283,7 @@ func Login(c echo.Context) error{
 // 		emptyFile.Close()
 
 // 		vmName := c.Request().FormValue("vmName")
-// 		dstPath := c.Request().FormValue("destPath") 
+// 		dstPath := c.Request().FormValue("destPath")
 
 // 		cmd = command{
 // 			Type: constants.CMDUpload,

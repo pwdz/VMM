@@ -1,45 +1,56 @@
 import React, { useState } from 'react';
 import './Login.css'; // Import the CSS file
+import { useNavigate } from "react-router-dom";
 
 function Login() {
-  // Define state variables for username and password
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+// Get the history object using the useHistory hook
 
-  // Define a function to handle form submission
-  function handleSubmit(event) {
-    event.preventDefault();
+    const navigate = useNavigate();
 
-    // Create a JSON object with the form data
-    const formData = {
-      username,
-      password,
+// Event handler for the signup button click
+    const handleSignupClick = () => {
+    // Use the history object to navigate to the /signup route
+        navigate('/signup');
     };
 
-    // Send a POST request to your API endpoint
-    fetch("http://127.0.0.1:8000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        // Handle the API response here
-        if (data.success) {
-          // Login was successful, you can redirect or perform other actions
-          alert("Login successful!");
-        } else {
-          // Login failed, display an error message
-          alert("Login failed. Please check your credentials.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("An error occurred during login.");
-      });
-  }
+    // Define state variables for username and password
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+
+    // Define a function to handle form submission
+    function handleSubmit(event) {
+        event.preventDefault();
+
+        // Create a JSON object with the form data
+        const formData = {
+        username,
+        password,
+        };
+
+        // Send a POST request to your API endpoint
+        fetch("http://127.0.0.1:8000/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            // Handle the API response here
+            if (data.success) {
+            // Login was successful, you can redirect or perform other actions
+            alert("Login successful!");
+            } else {
+            // Login failed, display an error message
+            alert("Login failed. Please check your credentials.");
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            alert("An error occurred during login.");
+        });
+    }
 
   return (
     <div className="container">
@@ -74,7 +85,7 @@ function Login() {
           <a href="forgot-password.html">Forgot Password?</a>
         </div>
         <div className="signup-button">
-          <a href="sign-up.html">Sign Up</a>
+            <button onClick={handleSignupClick}>Sign Up</button>
         </div>
       </form>
     </div>

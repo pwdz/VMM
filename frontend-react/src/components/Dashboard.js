@@ -1,7 +1,10 @@
 import React from 'react';
 import './Dashboard.css';
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
+  const navigate = useNavigate();
+
   // Example data (replace with your backend data)
   const servers = [
     { name: "Server 1", cpu: 4, ram: "8GB", status: "On" },
@@ -55,9 +58,9 @@ function Dashboard() {
           </svg>
           <span className="username">John Doe</span>
           <div className="dropdown-content">
-            <a href="profile.html">Profile</a>
-            <a href="create-vm.html">Create new VM</a>
-            <a href="login.html">Logout</a>
+            <button onClick={() => handleDropdownItemClick("profile")}>Profile</button>
+            <button onClick={() => handleDropdownItemClick("create-vm")}>Create new VM</button>
+            <button onClick={() => handleDropdownItemClick("login")}>Logout</button>
           </div>
         </div>
         <h2>Welcome to the Dashboard</h2>
@@ -67,6 +70,30 @@ function Dashboard() {
       </div>
     </div>
   );
+
+  // Function to handle dropdown item click and redirect accordingly
+  function handleDropdownItemClick(item) {
+    switch (item) {
+      case "profile":
+        navigate("/profile")
+        // Redirect to the profile page
+        // You can use React Router for this
+        break;
+      case "create-vm":
+        navigate("/createvm")
+        // Redirect to the create-vm page
+        // You can use React Router for this
+        break;
+      case "logout":
+
+        // navigate("/profile")
+        // Redirect to the login page
+        // You can use React Router for this
+        break;
+      default:
+        // Handle other dropdown items if needed
+    }
+  }
 }
 
 export default Dashboard;

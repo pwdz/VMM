@@ -1,0 +1,18 @@
+/* NotFound.css */
+
+.not-found {
+    text-align: center;
+    padding: 50px;
+    background-color: #f2f2f2;
+  }
+  
+  .not-found h1 {
+    font-size: 36px;
+    color: #333;
+  }
+  
+  .not-found p {
+    font-size: 18px;
+    color: #777;
+  }
+  

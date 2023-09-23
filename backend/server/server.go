@@ -10,6 +10,8 @@ import (
 	"github.com/pwdz/VMM/code/backend/configs"
 	"github.com/pwdz/VMM/code/backend/db"
 	jwtMiddleware "github.com/pwdz/VMM/code/backend/jwt"
+	"github.com/pwdz/VMM/code/backend/models"
+	"github.com/swaggo/echo-swagger"
 )
 
 var e *echo.Echo
@@ -33,13 +35,11 @@ func InitCfg() {
 func InitServer() {
 	e = echo.New()
 
+	// Serve Swagger UI
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
+
 	// Middleware to set content-type to JSON for all routes
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			c.Response().Header().Set("Content-Type", "application/json; charset=utf-8")
-			return next(c)
-		}
-	})
+	e.Use(CheckJsonFormatMiddlware)
 
 	// CORS middleware configuration
 	corsConfig := middleware.CORSConfig{
@@ -52,22 +52,37 @@ func InitServer() {
 	// Define routes for each endpoint
 	e.POST("/signup", SignupHandler)
 	e.POST("/login", LoginHandler)
+	
+	// api Group
+	apiGroup := e.Group("/api")
+	apiGroup.Use(jwtMiddleware.JwtMiddleware)
+	apiGroup.GET("/get-role", GetRoleHandler)
+
+	// Admin Group
+	adminGroup := e.Group("/admin")
+	adminGroup.Use(jwtMiddleware.JwtMiddleware)
+	adminGroup.Use(CheckUserRoleMiddleware(models.AdminRole))
+	adminGroup.GET("/users", GetUsersHandler)
+	adminGroup.GET("/export-users", ExportUsersHandler)
+	adminGroup.GET("/vms", GetAllVMsHandler)
+	adminGroup.GET("/export-vms", ExportAllVMsHandler)
 
 	// Create a route group with the authorization middleware
-	apiGroup := e.Group("/api")
-	// Middleware to add JWT token validation to protected routes.
-	apiGroup.Use(jwtMiddleware.JwtMiddleware) // Apply the authorization middleware to this group
+	userGroup := e.Group("/user")
+	userGroup.Use(jwtMiddleware.JwtMiddleware) // Apply the authorization middleware to this group
+	userGroup.Use(ExtractUserIDMiddleware)
+	userGroup.Use(CheckUserRoleMiddleware(models.UserRole))
 
-	apiGroup.POST("/create-vm", CreateVMHandler)
-	apiGroup.POST("/clone-vm", CloneVMHandler)
-	apiGroup.POST("/change-vm-settings", ChangeVMSettingsHandler)
-	apiGroup.POST("/power-off-vm", PowerOffVMHandler)
-	apiGroup.POST("/power-on-vm", PowerOnVMHandler)
-	apiGroup.POST("/get-vm-status", GetVMStatusHandler)
-	apiGroup.GET("/get-available-vms", GetAvailableVMsHandler)
-	apiGroup.POST("/upload-file-to-vm", UploadFileToVMHandler)
-	apiGroup.POST("/transfer-file-between-vms", TransferFileBetweenVMsHandler)
-	apiGroup.POST("/execute-command-on-vm", ExecuteCommandOnVMHandler)
+	userGroup.POST("/create-vm", CreateVMHandler)
+	userGroup.POST("/clone-vm", CloneVMHandler)
+	userGroup.POST("/change-vm-settings", ChangeVMSettingsHandler)
+	userGroup.POST("/power-off-vm", PowerOffVMHandler)
+	userGroup.POST("/power-on-vm", PowerOnVMHandler)
+	userGroup.POST("/get-vm-status", GetVMStatusHandler)
+	userGroup.GET("/get-vms", GetVMsHandler)
+	userGroup.POST("/upload-file-to-vm", UploadFileToVMHandler)
+	userGroup.POST("/transfer-file-between-vms", TransferFileBetweenVMsHandler)
+	userGroup.POST("/execute-command-on-vm", ExecuteCommandOnVMHandler)
 
 	e.Start(fmt.Sprintf("%s:%s", Cfg.Host, Cfg.Port))
 }

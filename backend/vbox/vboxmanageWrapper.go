@@ -2,9 +2,13 @@ package vboxWrapper
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 )
+
 // Define commands as a static map
 var commands = map[string]string{
 	"createVM": "VBoxManage createvm --name '<VM_Name>' --ostype '<OS_Type>' --register",
@@ -233,23 +237,53 @@ func GetAvailableVMs() error {
 }
 
 // UploadFileToVM function to upload a file to a Virtual Machine
-func UploadFileToVM(vmName, localFile, guestFile string) error {
-	// Use the "upload" command to upload a file to the VM
-	cmd := commands["upload"]
+func UploadFileToVM(vmName, guestFilePath string, fileContect []byte) error {
+    // Generate a unique filename for the saved file
+    uniqueFilename := generateUniqueFilename()
 
-	// Replace placeholders with actual values
-	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
-	cmd = strings.ReplaceAll(cmd, "<Local_File>", localFile)
-	cmd = strings.ReplaceAll(cmd, "<Guest_File>", guestFile)
+    // Define the local folder where the file will be saved
+    localFolder := "./"
 
-	args := strings.Fields(cmd)
-	command := exec.Command(args[0], args[1:]...)
-	output, err := command.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
-	}
+    // Combine the local folder and unique filename to create the full local path
+    localFilePath := filepath.Join(localFolder, uniqueFilename)
 
-	return nil
+    // Save the received local file content to the local path
+    if err := saveFileContent(localFilePath, fileContect); err != nil {
+        return err
+    }
+
+    // Use the "upload" command to upload the saved file to the VM
+    cmd := commands["upload"]
+
+    // Replace placeholders with the actual VM name, local file path, and guest file path
+    cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
+    cmd = strings.ReplaceAll(cmd, "<Local_File>", localFilePath) // Use the saved local file path
+    cmd = strings.ReplaceAll(cmd, "<Guest_File>", guestFilePath)
+
+    args := strings.Fields(cmd)
+    command := exec.Command(args[0], args[1:]...)
+    output, err := command.CombinedOutput()
+    if err != nil {
+        return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
+    }
+
+    return nil
+}
+
+func generateUniqueFilename() string {
+    // Generate a unique filename, you can use a timestamp or UUID, for example
+    // Here, we use a timestamp as a simple example
+    timestamp := time.Now().Unix()
+    return fmt.Sprintf("file_%d", timestamp)
+}
+
+func saveFileContent(filePath string, fileContent []byte ) error {
+    // Write the file content to the specified file path
+    err := ioutil.WriteFile(filePath, fileContent, 0644)
+    if err != nil {
+        return fmt.Errorf("failed to save file content: %v", err)
+    }
+    return nil
 }
 
 // TransferFileBetweenVMs function to transfer a file between two Virtual Machines

@@ -38,7 +38,10 @@ func (db *Database) Close() {
 }
 
 func (db *Database) AutoMigrate() {
-	db.connection.AutoMigrate(&models.User{})
+	db.connection.AutoMigrate(&models.User{}, &models.VM{})
+
+	// Add a foreign key constraint to link VMs to Users
+	db.connection.Model(&models.VM{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 }
 
 func (db *Database) FindUserByUsername(username string) *models.User {
@@ -52,4 +55,113 @@ func (db *Database) FindUserByUsername(username string) *models.User {
 
 func (db *Database) CreateUser(user *models.User) error {
 	return db.connection.Create(user).Error
+}
+
+func (db *Database) GetVMsByUserID(userID uint) ([]models.VM, error) {
+    var vms []models.VM
+    if err := db.connection.Where("user_id = ?", userID).Find(&vms).Error; err != nil {
+        return nil, err
+    }
+    return vms, nil
+}
+
+func (db *Database) GetVMStatus(vmID uint) (string, error) {
+    var vm models.VM
+    if err := db.connection.Select("status").Where("id = ?", vmID).First(&vm).Error; err != nil {
+        return "", err
+    }
+    return vm.Status, nil
+}
+
+// CreateVM creates a new VM record in the database.
+func (db *Database) CreateVM(vm *models.VM) error {
+    if err := db.connection.Create(vm).Error; err != nil {
+        return err
+    }
+    return nil
+}
+
+func (db *Database) DeleteVM(vmID uint) error {
+	var vm models.VM
+	if db.connection.Where("id = ?", vmID).First(&vm).RecordNotFound() {
+		return fmt.Errorf("VM not found")
+	}
+
+	// Set IsDeleted to true
+	vm.IsDeleted = true
+
+	if err := db.connection.Save(&vm).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *Database) FindVMByName(vmName string) *models.VM {
+	var vm models.VM
+	if db.connection.Where("name = ?", vmName).First(&vm).RecordNotFound() {
+		return nil
+	}
+	return &vm
+}
+
+func (db *Database) UpdateVMSetting(vmID uint, settingName, settingValue string) error {
+	// Update the specified VM setting in the database
+	return db.connection.Model(&models.VM{}).Where("id = ?", vmID).Update(settingName, settingValue).Error
+}
+
+func (db *Database) FindVMByID(vmID uint) *models.VM {
+	var vm models.VM
+	if db.connection.Where("id = ?", vmID).First(&vm).RecordNotFound() {
+		return nil
+	}
+	return &vm
+}
+
+func (db *Database) UpdateVMStatus(vmID uint, newStatus string) error {
+	// Find the VM by its ID
+	var vm models.VM
+	if db.connection.Where("id = ?", vmID).First(&vm).RecordNotFound() {
+		return fmt.Errorf("VM not found")
+	}
+
+	// Update the status
+	vm.Status = newStatus
+
+	// Save the updated VM back to the database
+	if err := db.connection.Save(&vm).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *Database) GetNonAdminUsersWithVMCounts() ([]models.UserWithVMCounts, error) {
+    var usersWithVMCounts []models.UserWithVMCounts
+
+	query := `
+	select *
+	from mydb.users u
+	left join (select user_id,
+					sum(if(status = 'off', 1, 0)) active_vm_count,
+					sum(if(status = 'on', 1, 0))  inactive_vm_count
+				from mydb.vms v
+                    group by user_id) v on v.user_id = u.id
+	where u.role != 'admin'`
+
+	// Execute the custom SQL query
+	if err := db.connection.Raw(query).Scan(&usersWithVMCounts).Error; err != nil {
+		return nil, err
+	}
+
+    return usersWithVMCounts, nil
+}
+
+// GetAllVMs retrieves a list of all VMs from the database.
+func (db *Database) GetAllVMs() ([]models.VM, error) {
+    var vms []models.VM
+    if err := db.connection.Find(&vms).Error; err != nil {
+        return nil, err
+    }
+    return vms, nil
 }

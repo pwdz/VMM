@@ -1,56 +1,58 @@
 import React, { useState } from 'react';
 import './Login.css'; // Import the CSS file
 import { useNavigate } from "react-router-dom";
+import axios from 'axios'; // Import Axios
 
 function Login() {
-// Get the history object using the useHistory hook
-
     const navigate = useNavigate();
 
-// Event handler for the signup button click
     const handleSignupClick = () => {
-    // Use the history object to navigate to the /signup route
         navigate('/signup');
     };
 
-    // Define state variables for username and password
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
-    // Define a function to handle form submission
-    function handleSubmit(event) {
-        event.preventDefault();
+    // Define a function to save the JWT token to localStorage
+    const saveTokenToLocalStorage = (token) => {
+        localStorage.setItem('jwt_token', token);
+    };
 
-        // Create a JSON object with the form data
-        const formData = {
-        username,
-        password,
-        };
 
-        // Send a POST request to your API endpoint
-        fetch("http://127.0.0.1:8000/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-        })
-        .then((response) => response.json())
-        .then((data) => {
-            // Handle the API response here
-            if (data.success) {
-            // Login was successful, you can redirect or perform other actions
-            alert("Login successful!");
-            } else {
-            // Login failed, display an error message
-            alert("Login failed. Please check your credentials.");
-            }
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-            alert("An error occurred during login.");
-        });
-    }
+    async function handleSubmit(event) {
+      event.preventDefault();
+  
+      const formData = {
+          username,
+          password,
+      };
+  
+      try {
+          // Make the POST request using Axios
+          const response = await axios.post("http://127.0.0.1:8000/login", formData, {
+              headers: {
+                  "Content-Type": "application/json",
+              },
+          });
+  
+          const data = response.data;
+  
+          if (response.status === 200) {
+              // Save the JWT token to localStorage
+              saveTokenToLocalStorage(data.data);
+              console.log(data.data)
+  
+              // Redirect or perform other actions
+              navigate("/")
+              console.log(":|")
+          } else {
+              alert("Login failed. Please check your credentials.");
+          }
+      } catch (error) {
+          console.error("Error:", error);
+          alert("An error occurred during login.");
+      }
+  }
 
   return (
     <div className="container">

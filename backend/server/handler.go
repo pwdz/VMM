@@ -478,11 +478,11 @@ func LoginHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
 	}
 
-	// TODO
 	storedUser := DB.FindUserByUsername(user.Username)
 	if storedUser == nil || storedUser.Password != user.Password {
 		return c.JSON(http.StatusUnauthorized, models.VMResponse{Error: "Invalid credentials"})
 	}
+
 
 	// Generate a JWT token for the authenticated user
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -490,7 +490,7 @@ func LoginHandler(c echo.Context) error {
 	claims["username"] = user.Username
 	claims["role"] = storedUser.Role
 	tokenString, _ := token.SignedString(jwtMiddleware.JwtSecret) // Use JwtSecret from jwt_middleware.go
-	fmt.Println("GOOOOOOOOOOOOOOOOOOV")
+	fmt.Println(user.Password, user.Username)
 	fmt.Println(claims)
 	fmt.Println(tokenString)
 	return c.JSON(http.StatusOK, models.VMResponse{Message: "Login successful", Error: "", Data: tokenString})

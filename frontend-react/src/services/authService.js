@@ -11,10 +11,20 @@ export function getAuthToken() {
 
 export function removeAuthToken() {
   localStorage.removeItem('jwtToken');
+  removeUserRole()
 }
-
-export async function getUserRole() {
+export function setUserRole(role){
+  localStorage.setItem('role', role)
+}
+export function getUserRole(){
+  return localStorage.getItem('role')
+}
+export function removeUserRole(){
+  localStorage.removeItem('role')
+}
+export async function getUserRoleAPI() {
   const token = getAuthToken();
+  // console.log(token)
 
   if (!token) {
     // Handle the case where the user is not authenticated
@@ -23,7 +33,7 @@ export async function getUserRole() {
 
   try {
     // Make an API call to your backend to get the user's role
-    const response = await axios.get('/api/get-role', {
+    const response = await axios.get('http://127.0.0.1:8000/api/get-role', {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',

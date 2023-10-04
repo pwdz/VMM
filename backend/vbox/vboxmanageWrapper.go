@@ -146,9 +146,10 @@ func CloneVM(sourceVMName, newVMName string) error {
 	cmd = strings.ReplaceAll(cmd, "<Source_VM_Name>", sourceVMName)
 	cmd = strings.ReplaceAll(cmd, "<New_VM_Name>", newVMName)
 
-	args := strings.Fields(cmd)
-	command := exec.Command(args[0], args[1:]...)
+	fmt.Println(cmd)
+	command := exec.Command("bash","-c", cmd)
 	output, err := command.CombinedOutput()
+	fmt.Println(sourceVMName, newVMName)
 	if err != nil {
 		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
 	}
@@ -166,8 +167,8 @@ func ChangeVMSettings(vmName, settingName, settingValue string) error {
 	cmd = strings.ReplaceAll(cmd, "<Setting_Name>", settingName)
 	cmd = strings.ReplaceAll(cmd, "<Value>", settingValue)
 
-	args := strings.Fields(cmd)
-	command := exec.Command(args[0], args[1:]...)
+	fmt.Println(cmd)
+	command := exec.Command("bash","-c", cmd)
 	output, err := command.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
@@ -308,17 +309,15 @@ func TransferFileBetweenVMs(sourceVMName, sourceFile, destVMName, destFile strin
 }
 
 // ExecuteCommandOnVM function to execute a command on a Virtual Machine
-func ExecuteCommandOnVM(vmName, pathToExe, arguments string) error {
+func ExecuteCommandOnVM(vmName, userCommand string) error {
 	// Use the "execute" command to execute a command on the VM
 	cmd := commands["execute"]
 
 	// Replace placeholders with actual values
 	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
-	cmd = strings.ReplaceAll(cmd, "<Path_to_Exe>", pathToExe)
-	cmd = strings.ReplaceAll(cmd, "<Arguments>", arguments)
-
-	args := strings.Fields(cmd)
-	command := exec.Command(args[0], args[1:]...)
+	cmd = strings.ReplaceAll(cmd, "<Arguments>", userCommand)
+	
+	command := exec.Command("bash","-c", cmd)
 	output, err := command.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))

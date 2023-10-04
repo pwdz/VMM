@@ -1,33 +1,71 @@
-/* You can style your component here */
+/* Users.css */
 
-/* Example styling for the export button */
-button {
-    margin-bottom: 20px;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background-color: #0056b3;
-  }
-  
-  /* Example styling for the table */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  
-  th, td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  th {
-    background-color: #f2f2f2;
-  }
-  
+.users-container {
+  text-align: center;
+  font-family: 'Your-Beautiful-Font', sans-serif;
+  margin: 20px;
+}
+.header-container {
+display: flex;
+align-items: center;
+}
+.header{
+  color: black;
+}
+
+.separator {
+margin: 0 10px; /* Adjust the margin as needed */
+color: #0056b3; /* Separator text color */
+font-size: 24px; /* Font size same as h1 */
+}
+
+.vms-button {
+background-color: transparent;
+border: none;
+cursor: pointer;
+font-size: 16px; /* Font size same as h1 */
+color: #0056b3; /* Button text color */
+}
+
+.user-table {
+  border-collapse: collapse;
+  width: 80%;
+  margin: 0 auto;
+  font-size: 18px;
+  border: 1px solid #ddd;
+  table-layout: fixed; /* Ensures table takes up full width */
+}
+
+.user-table th, .user-table td {
+  padding: 12px 15px;
+  text-align: center;
+}
+
+.even-row {
+  background-color: #f2f2f2;
+}
+
+.odd-row {
+  background-color: white;
+}
+
+.export-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+.download-icon {
+  margin-right: 10px;
+}
+.user-table th {
+  background-color: #0056b3; /* Background color for table headers */
+  color: white; /* Text color for table headers */
+  padding: 12px 15px;
+  text-align: center;
+}

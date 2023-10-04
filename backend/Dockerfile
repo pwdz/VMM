@@ -1,17 +1,17 @@
-# Use an official Golang runtime as a parent image
+# Use the official Go image as the base image
 FROM golang:1.20
 
-# Set the working directory to /app
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy the Go source code into the container
+COPY . .
 
 # Build the Go application
-RUN go build -o myapp
+RUN go build -o main .
 
-# Expose port 8080 to the outside world
-EXPOSE 8080
+# Expose the port the application will run on
+EXPOSE 8000
 
-# Command to run the executable
-CMD ["./myapp"]
+# Run the Go application
+CMD ["./main"]

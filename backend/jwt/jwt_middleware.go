@@ -3,6 +3,7 @@ package jwt
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
@@ -23,7 +24,8 @@ type CustomClaims struct {
 func JwtMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		tokenString := c.Request().Header.Get("Authorization")
-
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+		fmt.Println(tokenString)
 		if tokenString == "" {
 			// return c.Redirect(http.StatusFound, "/login")
 			return c.JSON(http.StatusUnauthorized, map[string]string{

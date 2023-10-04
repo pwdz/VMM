@@ -1,0 +1,88 @@
+/* vms.css */
+
+.vms-container {
+    text-align: center;
+    font-family: 'Your-Beautiful-Font', sans-serif;
+    margin: 20px;
+  }
+.header-container {
+display: flex;
+align-items: center;
+}
+
+.separator {
+margin: 0 10px; /* Adjust the margin as needed */
+color: #0056b3; /* Separator text color */
+font-size: 24px; /* Font size same as h1 */
+}
+
+.users-button {
+background-color: transparent;
+border: none;
+cursor: pointer;
+font-size: 16px; /* Font size same as h1 */
+color: #0056b3; /* Button text color */
+}
+
+.header {
+font-size: 24px;
+color: black; /* Title text color */
+margin-bottom: 20px;
+}
+
+.export-button {
+background-color: transparent;
+border: none;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 18px;
+margin-top: 10px;
+}
+
+.export-button .download-icon {
+margin-right: 10px;
+}
+
+.users-button-container {
+margin-top: 10px;
+}
+
+.users-button {
+background-color: transparent;
+border: none;
+cursor: pointer;
+font-size: 18px;
+color: #0056b3; /* Button text color */
+}
+
+.vm-table {
+border-collapse: collapse;
+width: 80%;
+margin: 0 auto;
+font-size: 18px;
+border: 1px solid #ddd;
+table-layout: fixed; /* Ensures table takes up full width */
+}
+
+.vm-table th,
+.vm-table td {
+padding: 12px 15px;
+text-align: center;
+}
+
+.even-row {
+background-color: #f2f2f2;
+}
+
+.odd-row {
+background-color: white;
+}
+
+.vm-table th {
+background-color: #0056b3; /* Background color for table headers */
+color: white; /* Text color for table headers */
+padding: 12px 15px;
+text-align: center;
+}

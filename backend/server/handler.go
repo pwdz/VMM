@@ -75,9 +75,9 @@ func DeleteVMHandler(c echo.Context) error {
 	}
 
 	// Call the DeleteVM function to delete the virtual machine in vboxWrapper
-	if err := vbox.DeleteVM(req.VMName); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete VM"})
-	}
+	// if err := vbox.DeleteVM(req.VMName); err != nil {
+	// 	return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete VM"})
+	// }
 	
 	// Call the DeleteVM function to set IsDeleted to true in the database
 	if err := DB.DeleteVM(req.VMID); err != nil {
@@ -127,7 +127,7 @@ func CloneVMHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create VM in the database"})
 	}
 
-	return c.JSON(http.StatusOK, models.VMResponse{Message: "VM cloned successfully"})
+	return c.JSON(http.StatusOK, newVM)
 }
 func ChangeVMSettingsHandler(c echo.Context) error {
 	// Extract the VM ID, setting name, and setting value from the request JSON
@@ -140,6 +140,7 @@ func ChangeVMSettingsHandler(c echo.Context) error {
 	// Check if the VM is turned off
 	vm := DB.FindVMByID(req.VMID)
 	if vm == nil {
+		fmt.Println(")))))))))))))))))))", vm, req.VMID)
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "VM not found"})
 	}
 
@@ -147,38 +148,40 @@ func ChangeVMSettingsHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "VM is currently running. Turn it off to change settings."})
 	}
 
+	cpuReq, _ := strconv.Atoi(req.NumCPUs)
 	// Validate and apply the CPU setting
-	if req.NumCPUs != "" {
+	if req.NumCPUs != "" && cpuReq != vm.CPU{
 		cpu, err := strconv.Atoi(req.NumCPUs)
 		if err != nil || cpu < 1 || cpu > 8 {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid CPU value. CPU must be an integer between 1 and 8."})
 		}
 
 		// Apply the CPU setting using vboxWrapper
-		if err := vbox.ChangeVMSettings(vm.Name, "cpu", req.NumCPUs); err != nil {
+		if err := vbox.ChangeVMSettings(vm.Name, "cpus", req.NumCPUs); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to change CPU settings"})
 		}
 
 		// Update the CPU setting in the database
-		if err := DB.UpdateVMSetting(vm.ID, "cpu", req.NumCPUs); err != nil {
+		if err := DB.UpdateVMSetting(vm.ID, "cpu", cpuReq); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update CPU setting in the database"})
 		}
 	}
 
+	ramReq, _ := strconv.Atoi(req.RamInMB)
 	// Validate and apply the RAM setting
-	if req.RamInMB != "" {
+	if req.RamInMB != "" && ramReq != vm.RAM {
 		ram, err := strconv.Atoi(req.RamInMB)
 		if err != nil || ram < 1 || ram > 4096 {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid RAM value. RAM must be an integer between 1 and 4096."})
 		}
 
 		// Apply the RAM setting using vboxWrapper
-		if err := vbox.ChangeVMSettings(vm.Name, "ram", req.RamInMB); err != nil {
+		if err := vbox.ChangeVMSettings(vm.Name, "memory", req.RamInMB); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to change RAM settings"})
 		}
 
 		// Update the RAM setting in the database
-		if err := DB.UpdateVMSetting(vm.ID, "ram", req.RamInMB); err != nil {
+		if err := DB.UpdateVMSetting(vm.ID, "ram", ramReq); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update RAM setting in the database"})
 		}
 	}
@@ -207,6 +210,7 @@ func PowerOffVMHandler(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "VM not found"})
 		}
 	} else {
+		fmt.Println("NOT GGGGGGGG", req)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "VM ID or VM Name is required"})
 	}
 
@@ -216,6 +220,7 @@ func PowerOffVMHandler(c echo.Context) error {
 
 	// Check if the VM is already powered off
 	if currentStatus == "off" {
+		fmt.Println("NOT GGGGGGGG2", req)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "VM is already powered off"})
 	}
 
@@ -238,10 +243,19 @@ func PowerOffVMHandler(c echo.Context) error {
 
 func PowerOnVMHandler(c echo.Context) error {
 	// Extract the VM ID and VM Name from the request JSON
+
 	var req models.VMRequest
 	if err := c.Bind(&req); err != nil {
+		fmt.Println(":|", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 	}
+
+
+	// var req models.VMRequest
+	// if err := c.Bind(&req); err != nil {
+	// 	fmt.Println(":|", err)
+	// 	return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
+	// }
 
 	var vm *models.VM
 
@@ -315,6 +329,7 @@ func GetVMStatusHandler(c echo.Context) error {
 }
 
 func GetVMsHandler(c echo.Context) error {
+	fmt.Println(":))))))))))))")
 	// Retrieve the user_id from the context
 	userID := c.Get("user_id").(uint)
 
@@ -362,6 +377,7 @@ func UploadFileToVMHandler(c echo.Context) error {
 		})
 	}
 
+	fmt.Println("chill bro")
 	// Call the function to upload the file content to the VM
 	if err := vbox.UploadFileToVM(vm.Name, req.GuestFilePath, fileContent); err != nil {
 		// Handle the error from the vbox.UploadFileContentToVM function
@@ -434,15 +450,23 @@ func TransferFileBetweenVMsHandler(c echo.Context) error {
 // TODO
 func ExecuteCommandOnVMHandler(c echo.Context) error {
 	req := new(struct {
-		VMName    string `json:"vmName"`
-		PathToExe string `json:"pathToExe"`
-		Arguments string `json:"arguments"`
+		VMName    string `json:"vm_name"`
+		Command string `json:"command"`
 	})
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
 	}
 
 	// Implement the logic to execute a command on a VM using req.VMName, req.PathToExe, and req.Arguments
+	if err := vbox.ExecuteCommandOnVM(req.VMName, req.Command); err != nil {
+		// Handle the error from the vbox.UploadFileContentToVM function
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to upload file content to VM",
+		})
+	}
+
+
+
 
 	return c.JSON(http.StatusOK, models.VMResponse{Message: "Command executed on VM successfully"})
 }
@@ -497,6 +521,7 @@ func LoginHandler(c echo.Context) error {
 }
 
 func GetRoleHandler(c echo.Context) error {
+	fmt.Println("WTF")
 	// Get the user's role from the context set by the JWT middleware
 	userRole := c.Get("role").(string)
 
@@ -516,7 +541,7 @@ func GetUsersHandler(c echo.Context) error {
             "error": "Failed to retrieve non-admin users",
         })
     }
-
+	fmt.Println(nonAdminUsers)
     // Return the list of non-admin users in JSON format
     return c.JSON(http.StatusOK, nonAdminUsers)
 }
@@ -583,7 +608,7 @@ func ExportUsersHandler(c echo.Context) error {
 // GetAllVMsHandler retrieves a list of all VMs in the database.
 func GetAllVMsHandler(c echo.Context) error {
     // Query the database for all VMs
-    vms, err := DB.GetAllVMs()
+    VMWithUsers, err := DB.GetAllVMs()
     if err != nil {
         // Handle the error, e.g., return an error response
         return c.JSON(http.StatusInternalServerError, map[string]string{
@@ -592,7 +617,7 @@ func GetAllVMsHandler(c echo.Context) error {
     }
 
     // Return the list of VMs as JSON
-    return c.JSON(http.StatusOK, vms)
+    return c.JSON(http.StatusOK, VMWithUsers)
 }
 
 // ExportAllVMsHandler exports the list of all VMs as an Excel file.
@@ -617,7 +642,7 @@ func ExportAllVMsHandler(c echo.Context) error {
 	}
 
 	// Define the header row
-	headers := []string{"ID", "Name", "OSType", "RAM", "CPU", "Status", "IsDeleted"}
+	headers := []string{"UserID", "Username", "ID", "Name", "OSType", "RAM", "CPU", "Status", "IsDeleted"}
 
 	// Create a new row for headers
 	headerRow := sheet.AddRow()
@@ -629,6 +654,8 @@ func ExportAllVMsHandler(c echo.Context) error {
 	// Write VM data to the Excel sheet
 	for _, vm := range vms {
 		dataRow := sheet.AddRow()
+		dataRow.AddCell().SetInt(int(vm.UserID))
+		dataRow.AddCell().Value = vm.Username
 		dataRow.AddCell().SetInt(int(vm.ID))
 		dataRow.AddCell().Value = vm.Name
 		dataRow.AddCell().Value = vm.OSType
@@ -653,3 +680,16 @@ func ExportAllVMsHandler(c echo.Context) error {
 
 	return nil
 }
+
+func GetProfileDataHandler(c echo.Context) error {
+	userID := c.Get("user_id").(uint)
+    userData, err := DB.GetUserDataWithVMCounts(userID)
+
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]string{
+            "error": "Failed to retrieve user profile data",
+        })
+    }
+    // Return the list of non-admin users in JSON format
+    return c.JSON(http.StatusOK, userData)
+}	

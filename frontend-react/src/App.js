@@ -1,11 +1,12 @@
 // App.js
 import React from 'react';
-import AppRouter from './Router'; // Import your Router component
+import AppRouter from './routing/Router'; // Import your Router component
+
 
 function App() {
   return (
-    <div className="App">
-      <AppRouter /> {/* Use your Router component here */}
+    <div className="App" >
+          <AppRouter /> {/* Use your Router component here */}
     </div>
   );
 }

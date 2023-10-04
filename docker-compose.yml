@@ -1,0 +1,48 @@
+version: '3'
+services:
+  # MySQL Database Container
+  mysql:
+    image: mysql:latest
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: mysecretpassword
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: pwdz             # Set the custom MySQL user
+      MYSQL_PASSWORD: 1234567890  # Set the custom MySQL user's password
+    ports:
+      - "3306:3306"  # Map container port 3306 to host port 3306
+    volumes:
+      - /home/user/Desktop/BachelorProject/code/Mysql-docker-volume:/var/lib/mysql
+
+
+  # Go Backend Container
+  backend:
+    build:
+      context: .  # Use the current directory as the build context
+      dockerfile: backend/Dockerfile
+    container_name: go_backend
+    ports:
+      - "8080:8000"  # Map container port 8080 to host port 8080
+    depends_on:
+      - mysql  # Ensure the backend starts after the MySQL container
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: pwdz                   # Set the custom MySQL user here
+      DB_PASSWORD: 1234567890  # Set the custom MySQL user's password here
+      DB_NAME: mydb
+
+  # React Frontend Container
+  frontend:
+    build:
+      context: .  # Use the current directory as the build context
+      dockerfile: frontend/Dockerfile
+    container_name: react_frontend
+    ports:
+      - "3000:3000"  # Map container port 3000 to host port 3000
+    environment:
+      REACT_APP_API_URL: http://backend:8000  # Update with your backend API URL
+
+# Define Docker volumes for MySQL data persistence
+volumes:
+  mysql_data:

@@ -118,6 +118,7 @@ body {
   .server-card .action-button {
     margin-top: 10px;
     padding: 5px 10px;
+    width: 100%;
     background-color: #007bff;
     color: #fff;
     border: none;
@@ -129,12 +130,67 @@ body {
     background-color: #0056b3;
   }
   
-  .server-card .edit-icon {
-    position: absolute;
+  .server-card .icon {
+    /* position: absolute; */
     top: 10px;
     left: 10px;
     width: 20px;
     height: 20px;
     cursor: pointer;
   }
+
+.server-card .delete-button {
+    margin-top: 5px;
+    padding: 5px 10px;
+    width: 100%;
+    background-color: red;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
   
+.server-card .delete-button:hover {
+  background-color: brown;
+}
+
+/* Add these CSS rules to position the icons and control their visibility */
+.server-card {
+  position: relative;
+}
+
+.icon-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.edit-icon {
+  display: none;
+}
+
+.upload-icon,
+.clone-icon,
+.execute-icon {
+  display: inline-block;
+}
+
+.server-card.off .edit-icon {
+  display: inline-block;
+}
+
+.server-card.on .upload-icon,
+.server-card.on .clone-icon,
+.server-card.on .execute-icon {
+  display: inline-block;
+}

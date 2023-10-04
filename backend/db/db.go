@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql" // Import MySQL driver
@@ -59,7 +60,7 @@ func (db *Database) CreateUser(user *models.User) error {
 
 func (db *Database) GetVMsByUserID(userID uint) ([]models.VM, error) {
     var vms []models.VM
-    if err := db.connection.Where("user_id = ?", userID).Find(&vms).Error; err != nil {
+    if err := db.connection.Where("!is_deleted and user_id = ?", userID).Find(&vms).Error; err != nil {
         return nil, err
     }
     return vms, nil
@@ -82,6 +83,7 @@ func (db *Database) CreateVM(vm *models.VM) error {
 }
 
 func (db *Database) DeleteVM(vmID uint) error {
+	fmt.Println(vmID)
 	var vm models.VM
 	if db.connection.Where("id = ?", vmID).First(&vm).RecordNotFound() {
 		return fmt.Errorf("VM not found")
@@ -105,8 +107,9 @@ func (db *Database) FindVMByName(vmName string) *models.VM {
 	return &vm
 }
 
-func (db *Database) UpdateVMSetting(vmID uint, settingName, settingValue string) error {
+func (db *Database) UpdateVMSetting(vmID uint, settingName string, settingValue int) error {
 	// Update the specified VM setting in the database
+	fmt.Println(settingName, settingValue)
 	return db.connection.Model(&models.VM{}).Where("id = ?", vmID).Update(settingName, settingValue).Error
 }
 
@@ -158,10 +161,31 @@ func (db *Database) GetNonAdminUsersWithVMCounts() ([]models.UserWithVMCounts, e
 }
 
 // GetAllVMs retrieves a list of all VMs from the database.
-func (db *Database) GetAllVMs() ([]models.VM, error) {
-    var vms []models.VM
-    if err := db.connection.Find(&vms).Error; err != nil {
+func (db *Database) GetAllVMs() ([]models.VMWithUser, error) {
+    var vms []models.VMWithUser
+	query := "select v.*, u.username from mydb.vms v inner join mydb.users u on u.id = v.user_id"
+
+    if err := db.connection.Raw(query).Scan(&vms).Error; err != nil {
         return nil, err
     }
     return vms, nil
+}
+
+func (db *Database) GetUserDataWithVMCounts(userID uint) (models.UserWithVMCounts, error) {
+    var userWithVMCount models.UserWithVMCounts
+
+	query := `
+	select *
+	from mydb.users u
+         left join (select user_id,
+                           sum(if(status = 'off', 1, 0)) active_vm_count,
+                           sum(if(status = 'on', 1, 0))  inactive_vm_count
+                    from mydb.vms v where !is_deleted
+                    group by user_id) v on v.user_id = u.id
+	where u.id = ` 
+	
+	// Execute the custom SQL query
+	err := db.connection.Raw(query + strconv.Itoa(int(userID))).Scan(&userWithVMCount).Error
+
+    return userWithVMCount, err
 }

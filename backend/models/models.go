@@ -27,7 +27,7 @@ const (
 )
 
 type User struct {
-    ID       uint   `gorm:"primary_key"`
+    ID       uint   `gorm:"primary_key json:id"`
     Username string `gorm:"unique_index" json:"username"`
     Email    string `json:"email"`
     Password string `json:"password"`
@@ -49,4 +49,8 @@ type VM struct {
     CPU       int    `json:"cpu"`
     Status    string `json:"status"` // You can define an enum for possible statuses
     IsDeleted bool   `json:"is_deleted" gorm:"default:false"`
+}
+type VMWithUser struct{
+    VM
+    Username string `json:"username"`
 }

@@ -11,3 +11,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+/* styles.css or your component CSS */
+#root {
+  height: 100vh;
+}
+
+body > #root > div {
+  height: 100%;
+}

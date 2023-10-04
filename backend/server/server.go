@@ -40,6 +40,7 @@ func InitServer() {
 
 	// Middleware to set content-type to JSON for all routes
 	e.Use(CheckJsonFormatMiddlware)
+	e.Use(RequestDumper)
 
 	// CORS middleware configuration
 	corsConfig := middleware.CORSConfig{
@@ -73,7 +74,9 @@ func InitServer() {
 	userGroup.Use(ExtractUserIDMiddleware)
 	userGroup.Use(CheckUserRoleMiddleware(models.UserRole))
 
+	userGroup.GET("/profile", GetProfileDataHandler)
 	userGroup.POST("/create-vm", CreateVMHandler)
+	userGroup.POST("/delete-vm", DeleteVMHandler)
 	userGroup.POST("/clone-vm", CloneVMHandler)
 	userGroup.POST("/change-vm-settings", ChangeVMSettingsHandler)
 	userGroup.POST("/power-off-vm", PowerOffVMHandler)

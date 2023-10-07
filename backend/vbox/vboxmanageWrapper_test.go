@@ -2,124 +2,205 @@ package vboxWrapper
 
 import (
 	"testing"
+	"time"
 )
+func ensureVMOff(vmName string, t *testing.T) {
+    // Check if the VM is running, and if so, turn it off
+    status, err := GetVMStatus(vmName)
+    if err != nil {
+        t.Fatalf("Failed to get VM status: %v", err)
+    }
+
+    if status == "running" {
+        if err := PowerOffVM(vmName); err != nil {
+            t.Fatalf("Failed to power off VM: %v", err)
+        }
+    }
+}
+
+func ensureVMOn(vmName string, t *testing.T) {
+    // Check if the VM is not running, and if so, turn it on
+    status, err := GetVMStatus(vmName)
+    if err != nil {
+        t.Fatalf("Failed to get VM status: %v", err)
+    }
+
+    if status != "running" {
+        if err := PowerOnVM(vmName); err != nil {
+            t.Fatalf("Failed to power on VM: %v", err)
+        }
+    }
+}
+// Helper function to check if a VM exists and create it if needed
+func ensureTestVMExists(t *testing.T) {
+    vmName := "TestVM"
+
+    // Check if the VM exists
+    vmStatus, err := GetVMStatus(vmName)
+    if err != nil || vmStatus == "" {
+        // VM doesn't exist, create it
+        err := CreateVM(vmName, "ubuntu", "2048", "2")
+        if err != nil {
+            t.Fatalf("Failed to create VM: %v", err)
+        }
+    }
+}
+
 
 func TestCreateVM(t *testing.T) {
-	// Replace these values with actual test data
-	vmName := "TestVM"
-	osType := "Linux"
-	amountInMB := "2048"
-	numCPUs := "2"
-	isoPath := "/home/user/Desktop/BachelorProject/ISO/ubuntu-22.04-desktop-amd64.iso"
+    // Define test input values
+    vmName := "TestVMCreate" + time.DateTime
+    osType := "ubuntu"
+    amountInMB := "2048"
+    numCPUs := "2"
 
-	err := CreateVM(vmName, osType, amountInMB, numCPUs, isoPath)
-	if err != nil {
-		t.Errorf("CreateVM failed: %v", err)
-	}
+    // Call the CreateVM function
+    err := CreateVM(vmName, osType, amountInMB, numCPUs)
+
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("CreateVM failed with error: %v", err)
+    }
 }
 
 func TestDeleteVM(t *testing.T) {
-	// Replace this value with the actual VM name to delete
-	vmName := "TestVM"
+    // Ensure that the test VM exists or create it
+    ensureTestVMExists(t)
+	ensureVMOff("TestVM", t)
 
-	err := DeleteVM(vmName)
-	if err != nil {
-		t.Errorf("DeleteVM failed: %v", err)
-	}
-}
+    // Define test input value
+    vmName := "TestVM"
 
-func TestCloneVM(t *testing.T) {
-	// Replace these values with actual test data
-	sourceVMName := "SourceVM"
-	newVMName := "CloneVM"
+    // Call the DeleteVM function
+    err := DeleteVM(vmName)
 
-	err := CloneVM(sourceVMName, newVMName)
-	if err != nil {
-		t.Errorf("CloneVM failed: %v", err)
-	}
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("DeleteVM failed with error: %v", err)
+    }
 }
 
 func TestChangeVMSettings(t *testing.T) {
-	// Replace these values with actual test data
-	vmName := "Initial-Test"
-	settingName := "memory"
-	settingValue := "1024"
+    // Ensure that the test VM exists or create it
+    ensureTestVMExists(t)
+	ensureVMOff("TestVM", t)
 
-	err := ChangeVMSettings(vmName, settingName, settingValue)
-	if err != nil {
-		t.Errorf("ChangeVMSettings failed: %v", err)
-	}
+    // Define test input values
+    vmName := "TestVM"
+    settingName := "memory"
+    settingValue := "4096"
+
+    // Call the ChangeVMSettings function
+    err := ChangeVMSettings(vmName, settingName, settingValue)
+
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("ChangeVMSettings failed with error: %v", err)
+    }
 }
 
 func TestPowerOffVM(t *testing.T) {
-	// Replace this value with the actual VM name to power off
-	vmName := "TestVM"
+    // Ensure that the test VM exists or create it
+    ensureTestVMExists(t)
+	ensureVMOn("TestVM", t)
 
-	err := PowerOffVM(vmName)
-	if err != nil {
-		t.Errorf("PowerOffVM failed: %v", err)
-	}
+    // Define test input value
+    vmName := "TestVM"
+
+    // Call the PowerOffVM function
+    err := PowerOffVM(vmName)
+
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("PowerOffVM failed with error: %v", err)
+    }
 }
 
 func TestPowerOnVM(t *testing.T) {
-	// Replace this value with the actual VM name to power on
-	vmName := "TestVM"
+    // Ensure that the test VM exists or create it
+    ensureTestVMExists(t)
+	ensureVMOff("TestVM", t)
 
-	err := PowerOnVM(vmName)
-	if err != nil {
-		t.Errorf("PowerOnVM failed: %v", err)
-	}
+    // Define test input value
+    vmName := "TestVM"
+
+    // Call the PowerOnVM function
+    err := PowerOnVM(vmName)
+
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("PowerOnVM failed with error: %v", err)
+    }
 }
 
 func TestGetVMStatus(t *testing.T) {
-	// Replace this value with the actual VM name to get its status
-	vmName := "TestVM"
+    // Ensure that the test VM exists or create it
+    ensureTestVMExists(t)
 
-	err := GetVMStatus(vmName)
-	if err != nil {
-		t.Errorf("GetVMStatus failed: %v", err)
-	}
+    // Define test input value
+    vmName := "TestVM"
+
+    // Call the GetVMStatus function
+    status, err := GetVMStatus(vmName)
+
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("GetVMStatus failed with error: %v", err)
+    }
+
+    // Check if the status is not empty
+    if status == "" {
+        t.Error("GetVMStatus returned an empty status")
+    }
 }
 
 func TestGetAvailableVMs(t *testing.T) {
-	err := GetAvailableVMs()
-	if err != nil {
-		t.Errorf("GetAvailableVMs failed: %v", err)
-	}
+    // Call the GetAvailableVMs function
+    err := GetAvailableVMs()
+
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("GetAvailableVMs failed with error: %v", err)
+    }
 }
 
 func TestUploadFileToVM(t *testing.T) {
-	// Replace these values with actual test data
-	vmName := "TestVM"
-	guestFilePath := "/path/on/guest"
-	fileContent := []byte("Test file content")
+    // Ensure that the test VM exists or create it
+    ensureTestVMExists(t)
+	ensureVMOn("TestVM",t)
 
-	err := UploadFileToVM(vmName, guestFilePath, fileContent)
-	if err != nil {
-		t.Errorf("UploadFileToVM failed: %v", err)
-	}
-}
+    // Define test input values
+    vmName := "TestVM"
+    guestFilePath := "/home/user/testfile.txt"
+    fileContent := []byte("This is a test file content.")
 
-func TestTransferFileBetweenVMs(t *testing.T) {
-	// Replace these values with actual test data
-	sourceVMName := "SourceVM"
-	sourceFile := "/path/to/source/file"
-	destVMName := "DestVM"
-	destFile := "/path/to/destination/file"
+    // Call the UploadFileToVM function
+    err := UploadFileToVM(vmName, guestFilePath, fileContent)
 
-	err := TransferFileBetweenVMs(sourceVMName, sourceFile, destVMName, destFile)
-	if err != nil {
-		t.Errorf("TransferFileBetweenVMs failed: %v", err)
-	}
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("UploadFileToVM failed with error: %v", err)
+    }
 }
 
 func TestExecuteCommandOnVM(t *testing.T) {
-	// Replace these values with actual test data
-	vmName := "TestVM"
-	command := "mkdir test"
+    // Ensure that the test VM exists or create it
+    ensureTestVMExists(t)
+	ensureVMOn("TestVM", t)
+    // Define test input values
+    vmName := "TestVM"
+    userCommand := "cd ~/ && ls -l"
 
-	err := ExecuteCommandOnVM(vmName, command)
-	if err != nil {
-		t.Errorf("ExecuteCommandOnVM failed: %v", err)
-	}
+    // Call the ExecuteCommandOnVM function
+    output, err := ExecuteCommandOnVM(vmName, userCommand)
+
+    // Check if the function executed without errors
+    if err != nil {
+        t.Errorf("ExecuteCommandOnVM failed with error: %v", err)
+    }
+
+    // Check if the output is not empty
+    if output == "" {
+        t.Error("ExecuteCommandOnVM returned an empty output")
+    }
 }

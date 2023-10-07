@@ -8,6 +8,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql" // Import MySQL driver
 	"github.com/pwdz/VMM/code/backend/configs"
 	"github.com/pwdz/VMM/code/backend/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Database struct {
@@ -39,7 +40,7 @@ func (db *Database) Close() {
 }
 
 func (db *Database) AutoMigrate() {
-	db.connection.AutoMigrate(&models.User{}, &models.VM{})
+	db.connection.AutoMigrate(&models.User{}, &models.VM{}, &models.PriceConfig{})
 
 	// Add a foreign key constraint to link VMs to Users
 	db.connection.Model(&models.VM{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
@@ -55,6 +56,12 @@ func (db *Database) FindUserByUsername(username string) *models.User {
 }
 
 func (db *Database) CreateUser(user *models.User) error {
+	if hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost); err != nil{
+		fmt.Println(err,"WRONG")
+		return err
+	}else{
+		user.Password = string(hashedPassword)
+	}
 	return db.connection.Create(user).Error
 }
 
@@ -145,11 +152,12 @@ func (db *Database) GetNonAdminUsersWithVMCounts() ([]models.UserWithVMCounts, e
 	query := `
 	select *
 	from mydb.users u
-	left join (select user_id,
-					sum(if(status = 'off', 1, 0)) active_vm_count,
-					sum(if(status = 'on', 1, 0))  inactive_vm_count
-				from mydb.vms v
-                    group by user_id) v on v.user_id = u.id
+			 left join (select user_id,
+							   sum(if(status = 'on', 1, 0))  active_vm_count,
+							   sum(if(status = 'off', 1, 0)) inactive_vm_count,
+							   sum(if(!is_deleted, cost, 0)) total_cost
+						from mydb.vms v
+						group by user_id) v on v.user_id = u.id
 	where u.role != 'admin'`
 
 	// Execute the custom SQL query
@@ -178,8 +186,9 @@ func (db *Database) GetUserDataWithVMCounts(userID uint) (models.UserWithVMCount
 	select *
 	from mydb.users u
          left join (select user_id,
-                           sum(if(status = 'off', 1, 0)) active_vm_count,
-                           sum(if(status = 'on', 1, 0))  inactive_vm_count
+                           sum(if(status = 'on', 1, 0)) active_vm_count,
+                           sum(if(status = 'off', 1, 0))  inactive_vm_count,
+						   sum(if(!is_deleted, cost, 0)) total_cost
                     from mydb.vms v where !is_deleted
                     group by user_id) v on v.user_id = u.id
 	where u.id = ` 
@@ -188,4 +197,18 @@ func (db *Database) GetUserDataWithVMCounts(userID uint) (models.UserWithVMCount
 	err := db.connection.Raw(query + strconv.Itoa(int(userID))).Scan(&userWithVMCount).Error
 
     return userWithVMCount, err
+}
+func (db *Database) GetPriceConfigs() ([]models.PriceConfig, error) {
+    var priceConfigs []models.PriceConfig
+    if err := db.connection.Find(&priceConfigs).Error; err != nil {
+        return nil, err
+    }
+    return priceConfigs, nil
+}
+func (db *Database) UpdatePriceConfig(priceConfig models.PriceConfig) error {
+    // Update the specified VM setting in the database
+    fmt.Println(priceConfig.ID, priceConfig.CostPerUnit, priceConfig.Type)
+    
+    // Specify the model type and the condition in the Where clause
+    return db.connection.Model(&models.PriceConfig{}).Where("id = ?", priceConfig.ID).Update("cost_per_unit", priceConfig.CostPerUnit).Error
 }

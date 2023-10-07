@@ -18,6 +18,11 @@ function VMDetails() {
   const [vmName, setVmName] = useState(initialVmNameValue);
   const [ram, setRam] = useState(initialRamValue);
   const [cpuCores, setCpuCores] = useState(initialCpuCoresValue);
+  const [isLoading, setIsLoading] = useState(false); // Add a loading state variable
+  const [progress, setProgress] = useState(0);
+  const [progressInterval, setProgressInterval] = useState(null);
+
+
 
   // Set the button text and submit callback based on whether it's an edit or create operation
   const buttonText = isEdit ? "Save Changes" : "Create";
@@ -60,6 +65,20 @@ function VMDetails() {
         </button>
       </form>
       <div id="alertMessage" className="alert" style={{ display: 'none' }}></div>
+      {isLoading && (
+        <div className="progress">
+          <div
+            className="progress-bar"
+            role="progressbar"
+            style={{ width: `${progress}%` }}
+            aria-valuenow={progress}
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            {progress}%
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -67,43 +86,81 @@ function VMDetails() {
   function handleBackClick() {
     navigate("/dashboard");
   }
-
-  // Function to handle Save Changes
+ // Function to handle Save Changes
   function handleSaveChanges(e) {
     e.preventDefault();
-    // Handle Save Changes logic here
-    
-    saveChangesToVM(location.state.vmID, vmName, ram, cpuCores)
-    .then((success) => {
-      if (success) {
-        navigate("/dashboard")
-      } else {
-        alert('Error saving changes. Please try again.');
-      }
-    })
-    .catch((error) => {
-      console.error('Error saving :', error);
-      alert('An error occurred while saveing changes.');
-    });
+    setIsLoading(true);
+    setProgress(0);
+
+    const apiCall = saveChangesToVM(location.state.vmID, vmName, ram, cpuCores);
+
+    const timeout = setTimeout(() => {
+      clearInterval(progressInterval); // Stop incrementing progress
+      alert('API call is taking longer than expected. Please check your connection.');
+      setIsLoading(false);
+    }, 30000); // Adjust the timeout value as needed
+
+    apiCall
+      .then((success) => {
+        clearTimeout(timeout); // Clear the timeout if the API call completes before the timeout
+        if (success) {
+          navigate('/dashboard');
+        } else {
+          alert('Error saving changes. Please try again.');
+        }
+      })
+      .catch((error) => {
+        console.error('Error saving:', error);
+        alert('An error occurred while saving changes.');
+      })
+      .finally(() => {
+        setIsLoading(false);
+        clearInterval(progressInterval); // Stop incrementing progress
+      });
+
+    // Simulate progress incrementing every second
+    const interval = setInterval(() => {
+      setProgress((prevProgress) => {
+        if (prevProgress < 100) {
+          return prevProgress + 1;
+        }
+        return prevProgress;
+      });
+    }, 1000);
+
+    setProgressInterval(interval);
   }
 
   // Function to handle Create
   function handleCreate(e) {
     e.preventDefault();
-
-    // Handle Create logic here
-    createVM(vmName, ram, cpuCores)
-    .then((success) => {
-      if (success) {
-        navigate("/dashboard")
-      } else {
-        alert('Error creating vm. Please try again.');
+    setIsLoading(true); // Set isLoading to true when the API call starts
+    setProgress(0); // Reset the progress bar
+  
+    const progressInterval = setInterval(() => {
+      if (progress < 100) {
+        setProgress((prevProgress) => prevProgress + 1); // Increment progress by 1
       }
-    })
-    .catch((error) => {
-      console.error('Error creating vm:', error);
-      alert('An error occurred while creating the vm.');
-    });
+    }, 3000); // Adjust the interval time as needed
+  
+    createVM(vmName, ram, cpuCores)
+      .then((success) => {
+        clearInterval(progressInterval); // Clear the progress interval when the API call completes
+  
+        if (success) {
+          navigate("/dashboard");
+        } else {
+          alert('Error creating vm. Please try again.');
+        }
+      })
+      .catch((error) => {
+        clearInterval(progressInterval); // Clear the progress interval in case of an error
+        console.error('Error creating vm:', error);
+        alert('An error occurred while creating the vm.');
+      })
+      .finally(() => {
+        setIsLoading(false); // Set isLoading to false when the API call is completed
+      });
   }
 }
 

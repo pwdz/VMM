@@ -38,6 +38,7 @@ type UserWithVMCounts struct {
     User
     ActiveVMCount   int `json:"active_vm_count"`
     InactiveVMCount int `json:"inactive_vm_count"`
+    TotalCost       int `json:"total_cost"`
 }
 
 type VM struct {
@@ -49,8 +50,23 @@ type VM struct {
     CPU       int    `json:"cpu"`
     Status    string `json:"status"` // You can define an enum for possible statuses
     IsDeleted bool   `json:"is_deleted" gorm:"default:false"`
+    Cost      int    `json:"cost"`
 }
 type VMWithUser struct{
     VM
     Username string `json:"username"`
 }
+
+type PriceConfig struct {
+    ID          uint `gorm:"primaryKey" json:"id"`
+    CostPerUnit int  `gorm:"column:cost_per_unit" json:"cost_per_unit"`
+    Type        PriceConfigType `gorm:"column:type" json:"type"`
+}
+
+type PriceConfigType string
+
+const (
+    HDD PriceConfigType = "hdd"
+    RAM PriceConfigType = "ram"
+    CPU PriceConfigType = "cpu"
+)

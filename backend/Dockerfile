@@ -8,6 +8,7 @@ WORKDIR /app
 COPY . .
 
 # Build the Go application
+RUN ls
 RUN go build -o main .
 
 # Expose the port the application will run on

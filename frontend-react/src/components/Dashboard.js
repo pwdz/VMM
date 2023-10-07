@@ -53,14 +53,14 @@ function Dashboard() {
               onClick={() => handleUploadServer(index)}
             />
           )}
-          {
+          {server.status.toLowerCase() === "off" &&(
             <img
               className="icon clone-icon"
               src={cloneIcon}
               alt={`Clone VM ${index}`}
               onClick={() => handleCloneServer(index)}
             />
-          }
+          )}
           {server.status.toLowerCase() === "on" && (
             <img
               className="icon execute-icon"

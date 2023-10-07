@@ -9,9 +9,11 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/tealeg/xlsx"
+	"golang.org/x/crypto/bcrypt"
 
 	jwtMiddleware "github.com/pwdz/VMM/code/backend/jwt"
 	"github.com/pwdz/VMM/code/backend/models"
+	"github.com/pwdz/VMM/code/backend/pricing"
 	vbox "github.com/pwdz/VMM/code/backend/vbox"
 )
 
@@ -28,7 +30,6 @@ func CreateVMHandler(c echo.Context) error {
 		osType := req.OSType
 		ramInMB := req.RamInMB
 		numCPUs := req.NumCPUs
-		isoPath := req.ISOPath
 		
 		// Convert RAM and CPU to integers
 		ramInMBInt, err := strconv.Atoi(ramInMB)
@@ -41,7 +42,7 @@ func CreateVMHandler(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid CPU format"})
 		}
 
-		if err := vbox.CreateVM(vmName, osType, ramInMB, numCPUs, isoPath); err != nil {
+		if err := vbox.CreateVM(vmName, osType, ramInMB, numCPUs); err != nil {
 			return c.JSON(http.StatusInternalServerError, models.VMResponse{Error: "Failed to create VM"})
 		}
 	
@@ -57,6 +58,7 @@ func CreateVMHandler(c echo.Context) error {
 			CPU:    numCPUsInt,
 			Status: "off",
 			IsDeleted: false,
+			Cost: pricing.CalculatePrice(numCPUsInt, ramInMBInt, 0),
 		}
 	
 		if err := DB.CreateVM(vm); err != nil {
@@ -74,10 +76,19 @@ func DeleteVMHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 	}
 
+	userID := c.Get("user_id").(uint) // Assuming you store the user ID in the context
+
+    // Check if the source VM belongs to the user
+    vm := DB.FindVMByID(req.VMID)
+    if vm == nil || vm.UserID != userID {
+        return c.JSON(http.StatusForbidden, map[string]string{
+            "error": "Source VM does not exist or does not belong to the user",
+        })
+    }
 	// Call the DeleteVM function to delete the virtual machine in vboxWrapper
-	// if err := vbox.DeleteVM(req.VMName); err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete VM"})
-	// }
+	if err := vbox.DeleteVM(vm.Name); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete VM"})
+	}
 	
 	// Call the DeleteVM function to set IsDeleted to true in the database
 	if err := DB.DeleteVM(req.VMID); err != nil {
@@ -106,7 +117,7 @@ func CloneVMHandler(c echo.Context) error {
 
 	// Clone the VM using vboxWrapper
 	if err := vbox.CloneVM(sourceVMName, newVMName); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to clone VM"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	// Retrieve the user_id from the context
@@ -121,7 +132,9 @@ func CloneVMHandler(c echo.Context) error {
 		CPU:       sourceVM.CPU,
 		Status:    "off",         // Assuming the new VM is initially off
 		IsDeleted: false,         // Default to false
+		Cost: pricing.CalculatePrice(sourceVM.CPU, sourceVM.RAM, 0),
 	}
+
 
 	if err := DB.CreateVM(newVM); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create VM in the database"})
@@ -140,7 +153,6 @@ func ChangeVMSettingsHandler(c echo.Context) error {
 	// Check if the VM is turned off
 	vm := DB.FindVMByID(req.VMID)
 	if vm == nil {
-		fmt.Println(")))))))))))))))))))", vm, req.VMID)
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "VM not found"})
 	}
 
@@ -185,7 +197,7 @@ func ChangeVMSettingsHandler(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update RAM setting in the database"})
 		}
 	}
-
+	CalculateAndUpdateVMCost(req.VMID)
 	return c.JSON(http.StatusOK, models.VMResponse {Message:  fmt.Sprintf("VM %d settings updated successfully", req.VMID)})
 }
 
@@ -450,49 +462,61 @@ func TransferFileBetweenVMsHandler(c echo.Context) error {
 // TODO
 func ExecuteCommandOnVMHandler(c echo.Context) error {
 	req := new(struct {
-		VMName    string `json:"vm_name"`
+		VMID      uint   `json:"vm_id"`    
 		Command string `json:"command"`
 	})
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
 	}
+	userID := c.Get("user_id").(uint) // Assuming you store the user ID in the context
+
+    // Check if the source VM belongs to the user
+    vm := DB.FindVMByID(req.VMID)
+    if vm == nil || vm.UserID != userID {
+        return c.JSON(http.StatusForbidden, map[string]string{
+            "error": "Source VM does not exist or does not belong to the user",
+        })
+    }
 
 	// Implement the logic to execute a command on a VM using req.VMName, req.PathToExe, and req.Arguments
-	if err := vbox.ExecuteCommandOnVM(req.VMName, req.Command); err != nil {
+	if result, err := vbox.ExecuteCommandOnVM(vm.Name, req.Command); err != nil {
 		// Handle the error from the vbox.UploadFileContentToVM function
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to upload file content to VM",
+			"error": err.Error(),
 		})
+	}else{
+		return c.JSON(http.StatusOK, models.VMResponse{Message: "Command executed on VM successfully:" + result})
 	}
-
-
-
-
-	return c.JSON(http.StatusOK, models.VMResponse{Message: "Command executed on VM successfully"})
 }
 
 // Handler for user registration (Sign-up)
 func SignupHandler(c echo.Context) error {
-	user := new(models.User)
-	if err := c.Bind(user); err != nil {
-		return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
-	}
+    user := new(models.User)
+    if err := c.Bind(user); err != nil {
+		fmt.Println(err)
+        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Invalid request"})
+    }
 
-	// TODO
-	if storedUser := DB.FindUserByUsername(user.Username); storedUser != nil {
-		return c.JSON(http.StatusConflict, models.VMResponse{Error: "User already exists"})
-	}
+    // Check if the password is at least 8 characters long
+    if len(user.Password) < 8 {
+        return c.JSON(http.StatusBadRequest, models.VMResponse{Error: "Password must be at least 8 characters long"})
+    }
 
-	DB.CreateUser(user)
+    // Check if the user already exists
+    if storedUser := DB.FindUserByUsername(user.Username); storedUser != nil {
+        return c.JSON(http.StatusConflict, models.VMResponse{Error: "User already exists"})
+    }
 
-	// Generate a JWT token for the new user
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["username"] = user.Username
-	claims["role"] = models.UserRole
-	tokenString, _ := token.SignedString(jwtMiddleware.JwtSecret) // Use JwtSecret from jwt_middleware.go
+    DB.CreateUser(user)
 
-	return c.JSON(http.StatusOK, models.VMResponse{Message: "User registered successfully", Error: "", Data: tokenString})
+    // Generate a JWT token for the new user
+    token := jwt.New(jwt.SigningMethodHS256)
+    claims := token.Claims.(jwt.MapClaims)
+    claims["username"] = user.Username
+    claims["role"] = models.UserRole
+    tokenString, _ := token.SignedString(jwtMiddleware.JwtSecret) // Use JwtSecret from jwt_middleware.go
+
+    return c.JSON(http.StatusOK, models.VMResponse{Message: "User registered successfully", Error: "", Data: tokenString})
 }
 
 // Handler for user login
@@ -503,8 +527,15 @@ func LoginHandler(c echo.Context) error {
 	}
 
 	storedUser := DB.FindUserByUsername(user.Username)
-	if storedUser == nil || storedUser.Password != user.Password {
+	hashedpass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	
+	if storedUser == nil  || err != nil {
 		return c.JSON(http.StatusUnauthorized, models.VMResponse{Error: "Invalid credentials"})
+	}else{
+		err = bcrypt.CompareHashAndPassword([]byte(hashedpass), []byte(user.Password))
+		if err != nil {
+			return c.JSON(http.StatusUnauthorized, models.VMResponse{Error: "Wrong Password"})
+		}
 	}
 
 
@@ -573,6 +604,7 @@ func ExportUsersHandler(c echo.Context) error {
     headerRow.AddCell().SetString("Email")
     headerRow.AddCell().SetString("Active VMs")
     headerRow.AddCell().SetString("Inactive VMs")
+    headerRow.AddCell().SetString("Total Cost")
 
     // Add user data to the Excel sheet
     for _, user := range users {
@@ -582,6 +614,7 @@ func ExportUsersHandler(c echo.Context) error {
         userRow.AddCell().SetString(user.Email)
         userRow.AddCell().SetInt(user.ActiveVMCount)
         userRow.AddCell().SetInt(user.InactiveVMCount)
+        userRow.AddCell().SetInt(user.TotalCost)
     }
 
     // Set the content type for the response
@@ -642,7 +675,7 @@ func ExportAllVMsHandler(c echo.Context) error {
 	}
 
 	// Define the header row
-	headers := []string{"UserID", "Username", "ID", "Name", "OSType", "RAM", "CPU", "Status", "IsDeleted"}
+	headers := []string{"UserID", "Username", "ID", "Name", "OSType", "RAM", "CPU", "Status", "Cost", "IsDeleted"}
 
 	// Create a new row for headers
 	headerRow := sheet.AddRow()
@@ -662,6 +695,7 @@ func ExportAllVMsHandler(c echo.Context) error {
 		dataRow.AddCell().SetInt(vm.RAM)
 		dataRow.AddCell().SetInt(vm.CPU)
 		dataRow.AddCell().Value = vm.Status
+		dataRow.AddCell().SetInt(vm.Cost)
 		dataRow.AddCell().SetBool(vm.IsDeleted)
 	}
 
@@ -693,3 +727,98 @@ func GetProfileDataHandler(c echo.Context) error {
     // Return the list of non-admin users in JSON format
     return c.JSON(http.StatusOK, userData)
 }	
+func GetPriceSettingHandler(c echo.Context) error {
+	// Fetch price settings from the database using your DB package
+	dbPriceConfigs, err := DB.GetPriceConfigs()
+	if err != nil {
+		// Handle the error, return an error response, or log it as needed
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch price settings"})
+	}
+
+	// Return the price settings as JSON response
+	return c.JSON(http.StatusOK, dbPriceConfigs)
+}
+func ChangePriceSettingHandler(c echo.Context) error {
+    // Parse the request body to get an array of updated price configurations
+    var updatedPriceConfigs []models.PriceConfig
+    if err := c.Bind(&updatedPriceConfigs); err != nil {
+        return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+    }
+
+
+    dbPriceConfigs, err := DB.GetPriceConfigs()
+    if err != nil {
+        return echo.NewHTTPError(http.StatusInternalServerError, "Failed to retrieve price configurations")
+    }
+
+    // Create a map to efficiently look up existing price configurations by Type
+    existingPriceConfigsByType := make(map[string]models.PriceConfig)
+    for _, pc := range dbPriceConfigs {
+        existingPriceConfigsByType[string(pc.Type)] = pc
+    }
+	fmt.Println(")))))))))")
+	flag := false
+    // Iterate through the updated price configurations
+    for _, updatedPriceConfig := range updatedPriceConfigs {
+        // Check if the updated configuration exists in the database
+        existingPriceConfig, exists := existingPriceConfigsByType[string(updatedPriceConfig.Type)]
+        if !exists {
+            return echo.NewHTTPError(http.StatusNotFound, "Price configuration not found")
+        }
+		
+        // Compare the updated CostPerUnit with the existing CostPerUnit
+        if updatedPriceConfig.CostPerUnit != existingPriceConfig.CostPerUnit {
+			fmt.Println(updatedPriceConfig.CostPerUnit, existingPriceConfig.CostPerUnit)
+            // If CostPerUnit has changed, update the record in the database
+            if err := DB.UpdatePriceConfig(updatedPriceConfig); err != nil {
+                return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update price configuration")
+            }
+			if updatedPriceConfig.Type == models.CPU{
+				pricing.UpdatePriceConfig(updatedPriceConfig.CostPerUnit, 0, 0)
+			}else if updatedPriceConfig.Type == models.HDD{
+				pricing.UpdatePriceConfig(0, 0, updatedPriceConfig.CostPerUnit)
+			}else if updatedPriceConfig.Type == models.RAM{
+				pricing.UpdatePriceConfig(0, updatedPriceConfig.CostPerUnit, 0)
+			}
+			flag = true
+        }
+    }
+	if flag{
+		CalculateAndUpdateTotalCost()
+	}
+
+	dbPriceConfigs, err = DB.GetPriceConfigs()
+	if err != nil {
+        return echo.NewHTTPError(http.StatusInternalServerError, "Failed to retrieve price configurations")
+    }
+    return c.JSON(http.StatusOK, dbPriceConfigs)
+}
+func CalculateAndUpdateTotalCost() error {
+    // Retrieve all VMs from the database
+    vms, err := DB.GetAllVMs()
+    if err != nil {
+        return err
+    }
+
+    // Iterate through the VMs and calculate the total cost for each
+    for _, vm := range vms {
+        // Calculate the total cost for the VM based on its settings
+        totalCost := pricing.CalculatePrice(vm.CPU, vm.RAM, 0)
+        
+        // Update the total cost in the database
+        if err := DB.UpdateVMSetting(vm.ID, "cost", totalCost); err != nil {
+            return err
+        }
+    }
+
+    return nil
+}
+
+func CalculateAndUpdateVMCost(vmID uint) error{
+	vm := DB.FindVMByID(vmID)
+	totalCost := pricing.CalculatePrice(vm.CPU, vm.RAM, 0)
+	if err := DB.UpdateVMSetting(vm.ID, "cost", totalCost); err != nil {
+		return err
+	}
+	return nil
+}

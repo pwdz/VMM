@@ -69,6 +69,7 @@ function Vms() {
             <th>RAM</th>
             <th>CPU</th>
             <th>Status</th>
+            <th>Cost</th>
             <th>Is Deleted</th>
           </tr>
         </thead>
@@ -83,6 +84,7 @@ function Vms() {
               <td>{vm.ram}</td>
               <td>{vm.cpu}</td>
               <td>{vm.status}</td>
+              <td>{vm.cost}</td>
               <td>{vm.is_deleted ? 'Yes' : 'No'}</td>
             </tr>
           ))}

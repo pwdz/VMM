@@ -10,7 +10,7 @@ function Login() {
     const navigate = useNavigate();
 
     const handleSignupClick = () => {
-        // navigate('/signup');
+        navigate('/signup');
     };
 
     const [username, setUsername] = useState('');
@@ -69,9 +69,6 @@ function Login() {
           <button type="submit" className="login-button">
             Login
           </button>
-        </div>
-        <div className="forgot-password">
-          <a href="forgot-password.html">Forgot Password?</a>
         </div>
         <div className="signup-button">
             <button onClick={handleSignupClick}>Sign Up</button>

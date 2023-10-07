@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -21,11 +22,10 @@ var commands = map[string]string{
 	"network":  "VBoxManage modifyvm '<VM_Name>' --nic1 nat",
 	"cloneVM":  "VBoxManage clonevm '<Source_VM_Name>' --name '<New_VM_Name>' --register",
 	"deleteVM":   "VBoxManage unregistervm '<VM_Name>' --delete",
-	"deleteVDI":  "VBoxManage closemedium disk '<VDI_UUID>' --delete",
-	"deleteNet":  "VBoxManage modifyvm '<VM_Name>' --nic<Adapter_Number> none",
 	"upload":   "VBoxManage guestcontrol '<VM_Name>' copyto --source '<Local_File>' --target '<Guest_File>'",
 	"transfer": "VBoxManage guestcontrol '<Source_VM_Name>' copyfrom --target '<Dest_VM_Name>' --source '<Source_File>' --destination '<Dest_File>'",
-	"execute":  "VBoxManage guestcontrol '<VM_Name>' run --exe '<Path_to_Exe>' -- <Arguments>",
+	"executeLinux":  "VBoxManage guestcontrol '<VM_Name>' run --exe '/bin/bash' --username <username> --password <password> -- -c <command>",
+	"executeWindows":  "VBoxManage guestcontrol '<VM_Name>' run --exe <command> --username <username> --password <password>",
 	"change":   "VBoxManage modifyvm '<VM_Name>' --<Setting_Name> <Value>",
 	"poweroff": "VBoxManage controlvm '<VM_Name>' poweroff",
 	"poweron":  "VBoxManage startvm '<VM_Name>' --type headless",
@@ -42,97 +42,48 @@ func executeCommand(cmd string) error {
 	return nil
 }
 
-func CreateVM(vmName, osType, amountInMB, numCPUs, isoPath string) error {
-	requiredCommands := []string{
-		"createVM",
-		"memory",
-		"cpus",
-		"hdd1",
-		"hdd2",
-		"hdd3",
-		"iso",
-		"network",
+func CreateVM(vmName, osType, amountInMB, numCPUs string) error {
+	sourceVMName := ""
+	if osType == "ubuntu"{
+		sourceVMName = "Base-Ubuntu" 
+	}else if osType == "windows10"{
+		sourceVMName = "Base-Windows"
 	}
 
-	// Replace placeholders with actual values
-	for _, cmdKey := range requiredCommands {
-		cmd := commands[cmdKey]
-		cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
-		cmd = strings.ReplaceAll(cmd, "<OS_Type>", osType)
-		cmd = strings.ReplaceAll(cmd, "<Amount_in_MB>", amountInMB)
-		cmd = strings.ReplaceAll(cmd, "<Number_of_CPUs>", numCPUs)
-		cmd = strings.ReplaceAll(cmd, "<Path_to_VDI>", strings.Join([]string{"/home/user/VirtualBox VMs/",vmName,".vdi"}, ""))
-		cmd = strings.ReplaceAll(cmd, "<Path_to_ISO>", isoPath)
-
-		println(cmd)
-		if err := executeCommand(cmd); err != nil {
+	fmt.Println("------------------------")
+	fmt.Println(vmName, osType, sourceVMName, amountInMB, numCPUs)
+	if err := CloneVM(sourceVMName, vmName); err == nil{
+		fmt.Println("???????????")
+		if err = ChangeVMSettings(vmName, "memory", amountInMB); err == nil{
+			if err = ChangeVMSettings(vmName, "cpus", numCPUs); err == nil{
+				return nil
+			}
 			return err
 		}
+		return err
+	}else{
+		return err
 	}
-
-	return nil
 }
 
 // DeleteVM function to delete a Virtual Machine along with its VDI and network settings
 func DeleteVM(vmName string) error {
-	// Get the UUID of the VM's VDI first
-	cmd := "VBoxManage showvminfo " + vmName + " --machinereadable | grep vdi"
-	command := exec.Command("bash", "-c", cmd)
-	output, err := command.CombinedOutput()
-	if err != nil {
-		fmt.Printf("failed to get VDI information for VM: %s", vmName)
-	}
-
-	// Extract the VDI UUID from the output
-	vdiUUID := ""
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "vdi=") {
-			vdiUUID = strings.TrimPrefix(line, "vdi=")
-			break
-		}
-	}
-
-	// Use the "deleteVDI" command to delete the VM's VDI using its UUID
-	if vdiUUID != "" {
-		cmd = commands["deleteVDI"]
-		cmd = strings.ReplaceAll(cmd, "<VDI_UUID>", vdiUUID)
-		args := strings.Fields(cmd)
-		command = exec.Command(args[0], args[1:]...)
-		output, err = command.CombinedOutput()
-		if err != nil {
-			fmt.Printf("failed to execute command: %s\nOutput: %s", cmd, string(output))
-		}
-	}
-
-	// Use the "deleteNet" command to remove all the VM's network settings
-	cmd = commands["deleteNet"]
-	for adapterNumber := 1; adapterNumber <= 8; adapterNumber++ {
-		cmdWithAdapter := strings.ReplaceAll(cmd, "<VM_Name>", vmName)
-		cmdWithAdapter = strings.ReplaceAll(cmdWithAdapter, "<Adapter_Number>", fmt.Sprintf("%d", adapterNumber))
-		args := strings.Fields(cmdWithAdapter)
-		command = exec.Command(args[0], args[1:]...)
-		output, err = command.CombinedOutput()
-		if err != nil {
-			// The network adapter might not exist, so ignore the error
-			continue
-		}
-	}
-
-	// Use the "deleteVM" command to delete the VM
-	cmd = commands["deleteVM"]
-
 	// Replace placeholder with the actual VM name
-	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
+	cmd := strings.ReplaceAll(commands["deleteVM"], "<VM_Name>", vmName)
+	fmt.Println(cmd)
+	command := exec.Command("bash", "-c", cmd)
 
-	args := strings.Fields(cmd)
-	command = exec.Command(args[0], args[1:]...)
-	output, err = command.CombinedOutput()
+	// Start the command
+	err := command.Start()
 	if err != nil {
-		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
+		return fmt.Errorf("failed to start command: %s", err)
 	}
 
-
+	// Wait for the command to complete
+	err = command.Wait()
+	if err != nil {
+		return fmt.Errorf("failed to execute command: %s", err)
+	}
 
 	return nil
 }
@@ -147,15 +98,25 @@ func CloneVM(sourceVMName, newVMName string) error {
 	cmd = strings.ReplaceAll(cmd, "<New_VM_Name>", newVMName)
 
 	fmt.Println(cmd)
-	command := exec.Command("bash","-c", cmd)
-	output, err := command.CombinedOutput()
-	fmt.Println(sourceVMName, newVMName)
+	command := exec.Command("bash", "-c", cmd)
+
+	// Start the command
+	err := command.Start()
 	if err != nil {
-		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
+		return fmt.Errorf("failed to start command: %s", err)
 	}
+
+	// Wait for the command to complete
+	err = command.Wait()
+	if err != nil {
+		return fmt.Errorf("failed to execute command: %s", err)
+	}
+
+	fmt.Println(sourceVMName, newVMName)
 
 	return nil
 }
+
 
 // ChangeVMSettings function to change settings of a Virtual Machine
 func ChangeVMSettings(vmName, settingName, settingValue string) error {
@@ -169,9 +130,16 @@ func ChangeVMSettings(vmName, settingName, settingValue string) error {
 
 	fmt.Println(cmd)
 	command := exec.Command("bash","-c", cmd)
-	output, err := command.CombinedOutput()
+		// Start the command
+	err := command.Start()
 	if err != nil {
-		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
+		return fmt.Errorf("failed to start command: %s", err)
+	}
+
+	// Wait for the command to complete
+	err = command.Wait()
+	if err != nil {
+		return fmt.Errorf("failed to execute command: %s", err)
 	}
 
 	return nil
@@ -184,7 +152,19 @@ func PowerOffVM(vmName string) error {
 
 	// Replace placeholder with the actual VM name
 	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
-	executeCommand(cmd)
+	command := exec.Command("bash","-c", cmd)
+		// Start the command
+	err := command.Start()
+	if err != nil {
+		return fmt.Errorf("failed to start command: %s", err)
+	}
+
+	// Wait for the command to complete
+	err = command.Wait()
+	if err != nil {
+		return fmt.Errorf("failed to execute command: %s", err)
+	}
+
 	return nil
 }
 
@@ -195,29 +175,49 @@ func PowerOnVM(vmName string) error {
 
 	// Replace placeholder with the actual VM name
 	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
+	command := exec.Command("bash","-c", cmd)
+		// Start the command
+	err := command.Start()
+	if err != nil {
+		return fmt.Errorf("failed to start command: %s", err)
+	}
 
-	executeCommand(cmd)
+	// Wait for the command to complete
+	err = command.Wait()
+	if err != nil {
+		return fmt.Errorf("failed to execute command: %s", err)
+	}
+
 	return nil
 }
 
 // GetVMStatus function to get the status of a Virtual Machine
-func GetVMStatus(vmName string) error {
+func GetVMStatus(vmName string) (string, error) {
 	// Use the "getStatus" command to get VM status
 	cmd := commands["getStatus"]
 
 	// Replace placeholder with the actual VM name
 	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
 
-	args := strings.Fields(cmd)
-	command := exec.Command(args[0], args[1:]...)
+	command := exec.Command("bash", "-c", cmd)
 	output, err := command.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
+		return "", fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
 	}
 
 	fmt.Println("VM Status:\n", string(output))
+    pattern := `VMState="([^"]+)"`
+    // Compile the regular expression
+    regex := regexp.MustCompile(pattern)
+    matches := regex.FindAllStringSubmatch(string(output), -1)
 
-	return nil
+    if len(matches) > 0 {
+        // Extract the captured text
+        capturedText := matches[0][1]
+        return capturedText, nil
+    } else {
+        return "", fmt.Errorf("No match found.")
+    }
 }
 
 // GetAvailableVMs function to get the list of available Virtual Machines
@@ -309,19 +309,21 @@ func TransferFileBetweenVMs(sourceVMName, sourceFile, destVMName, destFile strin
 }
 
 // ExecuteCommandOnVM function to execute a command on a Virtual Machine
-func ExecuteCommandOnVM(vmName, userCommand string) error {
+func ExecuteCommandOnVM(vmName, userCommand string) (string, error) {
 	// Use the "execute" command to execute a command on the VM
-	cmd := commands["execute"]
+	cmd := commands["executeLinux"]
 
 	// Replace placeholders with actual values
 	cmd = strings.ReplaceAll(cmd, "<VM_Name>", vmName)
-	cmd = strings.ReplaceAll(cmd, "<Arguments>", userCommand)
+	cmd = strings.ReplaceAll(cmd, "<command>", userCommand)
+	cmd = strings.ReplaceAll(cmd, "<username>", "defaultuser")
+	cmd = strings.ReplaceAll(cmd, "<password>", "defaultuser")
 	
 	command := exec.Command("bash","-c", cmd)
 	output, err := command.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
+		return "", fmt.Errorf("failed to execute command: %s\nOutput: %s", cmd, string(output))
 	}
 
-	return nil
+	return string(output), nil
 }

@@ -10,6 +10,7 @@ import VMs from '../components/VMs';
 import Login from '../components/Login';
 import Signup from '../components/Signup';
 import NotFound from '../components/NotFound';
+import Pricing from '../components/Pricing';
 import AccessDenied from '../components/AccessDenied';
 import { getUserRole } from '../services/authService';
 
@@ -42,6 +43,10 @@ function RouteGuard() {
     {
       path: '/vms',
       element: getUserRole() && getUserRole() === 'admin' ? <VMs /> : <Navigate to="/accessdenied" />,
+    },
+    {
+      path: '/pricing',
+      element: getUserRole() && getUserRole() === 'admin' ? <Pricing /> : <Navigate to="/accessdenied" />,
     },
     {
       path: '/login',

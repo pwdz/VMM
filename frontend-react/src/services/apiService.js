@@ -131,6 +131,7 @@ export async function createVM(vmName, ramInMb, numCpus) {
       vm_name: vmName,
       ram_in_mb: ramInMb,
       num_cpus: numCpus,
+      os_type: "ubuntu",
     });
     return response.data; // You can return any data you need from the response
   } catch (error) {
@@ -248,4 +249,38 @@ export async function uploadServerFile(vmId, file, filePath) {
       reject(error);
     }
   });
+}
+export async function signup(username, password, email) {
+  try {
+    const response = await axiosInstance.post('/signup', {
+      username,
+      email,
+      password
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function fetchPricingData() {
+  try {
+    const response = await axiosInstance.get('/admin/pricing');
+    console.log(response.data)
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching pricing data:', error);
+    throw error;
+  }
+}
+
+export async function updatePricingData(priceConfigs) {
+  try {
+    console.log(priceConfigs)
+    const response = await axiosInstance.post('/admin/pricing-update', priceConfigs);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating pricing data:', error);
+    throw error;
+  }
 }

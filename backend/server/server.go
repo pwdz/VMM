@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/labstack/echo/v4"
@@ -11,6 +12,8 @@ import (
 	"github.com/pwdz/VMM/code/backend/db"
 	jwtMiddleware "github.com/pwdz/VMM/code/backend/jwt"
 	"github.com/pwdz/VMM/code/backend/models"
+	"github.com/pwdz/VMM/code/backend/pricing"
+	vboxWrapper "github.com/pwdz/VMM/code/backend/vbox"
 	"github.com/swaggo/echo-swagger"
 )
 
@@ -31,6 +34,38 @@ func InitCfg() {
 		e.Logger.Fatal("Unable to load configs")
 	}
 
+	if vmsWithUsers, err := DB.GetAllVMs(); err == nil{
+		for _, vmWithUser := range vmsWithUsers{
+			if currStatus, err2 := vboxWrapper.GetVMStatus(vmWithUser.VM.Name); err2 == nil{
+				fmt.Println(currStatus)
+				if strings.Contains(currStatus, "off"){
+					currStatus = "off"
+				}else if strings.Contains(currStatus, "running"){
+					currStatus = "on"
+				}
+				DB.UpdateVMStatus(vmWithUser.VM.ID, currStatus)
+			}
+		}
+	}
+	priceConfigs, err := DB.GetPriceConfigs()
+    if err != nil {
+        return 
+    }
+
+	var c,r,h int
+    // Iterate through the priceConfigs and update the variables
+    for _, config := range priceConfigs {
+        switch config.Type {
+        case "cpu":
+            c = config.CostPerUnit
+        case "ram":
+            r = config.CostPerUnit
+        case "hdd":
+            h = config.CostPerUnit
+        // Add more cases if you have other types
+        }
+    }
+	pricing.UpdatePriceConfig(c, r, h)
 }
 func InitServer() {
 	e = echo.New()
@@ -67,6 +102,8 @@ func InitServer() {
 	adminGroup.GET("/export-users", ExportUsersHandler)
 	adminGroup.GET("/vms", GetAllVMsHandler)
 	adminGroup.GET("/export-vms", ExportAllVMsHandler)
+	adminGroup.GET("/pricing", GetPriceSettingHandler)
+	adminGroup.POST("/pricing-update", ChangePriceSettingHandler)
 
 	// Create a route group with the authorization middleware
 	userGroup := e.Group("/user")

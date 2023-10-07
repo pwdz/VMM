@@ -68,6 +68,7 @@ function UsersView() {
             <th>Role</th>
             <th>Active VM Count</th>
             <th>Inactive VM Count</th>
+            <th>Total Cost</th>
           </tr>
         </thead>
         <tbody>
@@ -79,6 +80,7 @@ function UsersView() {
               <td>{user.role}</td>
               <td>{user.active_vm_count}</td>
               <td>{user.inactive_vm_count}</td>
+              <td>{user.total_cost}</td>
             </tr>
           ))}
         </tbody>

@@ -15,7 +15,8 @@ function ExecuteCommandModal({ onClose, onExecute, vmId }) {
         // Close the modal
         onClose();
       } catch (error) {
-        console.error('Error executing command:', error);
+        console.error('Error executing command:', error.response.data.error);
+        alert(error.response.data.error)
         // Handle the error gracefully
       }
     }
